@@ -1,0 +1,746 @@
+import { useState } from "react";
+
+const TR = "all 0.4s ease";
+const hi  = (on, c="#ef4444", off="#cbd5e1") => on ? c : off;
+const hiF = (on, c="rgba(239,68,68,0.15)", off="transparent") => on ? c : off;
+
+/* ── Geometric primitives (same family as App_1) ───────── */
+function Tick({x1,y1,x2,y2,n=1,stroke="#3b82f6",sw=2.2}){
+  const cx=(x1+x2)/2,cy=(y1+y2)/2,dx=x2-x1,dy=y2-y1,l=Math.sqrt(dx*dx+dy*dy);
+  const px=-dy/l*7,py=dx/l*7;
+  return Array.from({length:n},(_,i)=>{const o=(i-(n-1)/2)*5,tx=cx+dx/l*o,ty=cy+dy/l*o;
+    return <line key={i} x1={tx+px} y1={ty+py} x2={tx-px} y2={ty-py} stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>;});
+}
+function RA({x,y,s=8,r=0,stroke="#64748b"}){
+  return <g transform={`rotate(${r},${x},${y})`}><polyline points={`${x-s},${y} ${x-s},${y-s} ${x},${y-s}`} fill="none" stroke={stroke} strokeWidth="1.6"/></g>;
+}
+const Pt=({x,y,label,dx=4,dy=-6,fill="#374151",r=3,fs=11})=><><circle cx={x} cy={y} r={r} fill={fill}/>{label&&<text x={x+dx} y={y+dy} fill={fill} fontSize={fs} fontFamily="Georgia,serif" fontWeight="600">{label}</text>}</>;
+const Lbl=({x,y,children,fill="#374151",fw="normal",fs=12,ta="start"})=><text x={x} y={y} fill={fill} fontSize={fs} fontFamily="Georgia,serif" fontWeight={fw} textAnchor={ta}>{children}</text>;
+
+/* Cartesian axes helper. ox,oy: origin in pixels. ux,uy: pixels per unit. */
+function Axes({ox,oy,xMin,xMax,yMin,yMax,ux=20,uy=20,grid=false,unit=true}){
+  const xL=ox+xMin*ux, xR=ox+xMax*ux;
+  const yT=oy-yMax*uy, yB=oy-yMin*uy;
+  const ticks=[];
+  if(unit){
+    for(let x=Math.ceil(xMin);x<=Math.floor(xMax);x++) if(x!==0)
+      ticks.push(<line key={`xt${x}`} x1={ox+x*ux} y1={oy-2.5} x2={ox+x*ux} y2={oy+2.5} stroke="#cbd5e1" strokeWidth="1"/>);
+    for(let y=Math.ceil(yMin);y<=Math.floor(yMax);y++) if(y!==0)
+      ticks.push(<line key={`yt${y}`} x1={ox-2.5} y1={oy-y*uy} x2={ox+2.5} y2={oy-y*uy} stroke="#cbd5e1" strokeWidth="1"/>);
+  }
+  return <g>
+    {grid&&Array.from({length:Math.floor(xMax)-Math.ceil(xMin)+1},(_,i)=>{const x=Math.ceil(xMin)+i;
+      return <line key={`gx${i}`} x1={ox+x*ux} y1={yT} x2={ox+x*ux} y2={yB} stroke="#f1f5f9" strokeWidth="0.8"/>;})}
+    {grid&&Array.from({length:Math.floor(yMax)-Math.ceil(yMin)+1},(_,i)=>{const y=Math.ceil(yMin)+i;
+      return <line key={`gy${i}`} x1={xL} y1={oy-y*uy} x2={xR} y2={oy-y*uy} stroke="#f1f5f9" strokeWidth="0.8"/>;})}
+    <line x1={xL} y1={oy} x2={xR} y2={oy} stroke="#94a3b8" strokeWidth="1.3"/>
+    <line x1={ox} y1={yT} x2={ox} y2={yB} stroke="#94a3b8" strokeWidth="1.3"/>
+    <polygon points={`${xR},${oy} ${xR-5},${oy-3} ${xR-5},${oy+3}`} fill="#94a3b8"/>
+    <polygon points={`${ox},${yT} ${ox-3},${yT+5} ${ox+3},${yT+5}`} fill="#94a3b8"/>
+    {ticks}
+    <text x={xR-2} y={oy+12} fontSize="10" fill="#94a3b8" fontFamily="Georgia,serif" fontStyle="italic" textAnchor="end">x</text>
+    <text x={ox-6} y={yT+8} fontSize="10" fill="#94a3b8" fontFamily="Georgia,serif" fontStyle="italic">y</text>
+    <text x={ox-5} y={oy+11} fontSize="9" fill="#94a3b8" fontFamily="Georgia,serif" textAnchor="end">O</text>
+  </g>;
+}
+
+/* Quadratic Bezier path for a parabola y=ax²+bx+c from x1 to x2 */
+function paraPath(a,b,c,x1,x2,ox,oy,ux,uy){
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const y1=a*x1*x1+b*x1+c, y2=a*x2*x2+b*x2+c;
+  const xc=(x1+x2)/2, yc=a*x1*x2+b*(x1+x2)/2+c;
+  return `M${X(x1).toFixed(1)},${Y(y1).toFixed(1)} Q${X(xc).toFixed(1)},${Y(yc).toFixed(1)} ${X(x2).toFixed(1)},${Y(y2).toFixed(1)}`;
+}
+
+/* ── FIGURES ─────────────────────────────────────────── */
+
+/* 1 · Distanza tra due punti — A(1,1), B(4,3) */
+const Fig1=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=35,oy=170,ux=30,uy=30;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Ax=X(1),Ay=Y(1),Bx=X(4),By=Y(3);
+  const dx=t>=0,dy=t>=1,tri=t>=2,hyp=t>=3,res=t>=4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-0.3} xMax={5.5} yMin={-0.3} yMax={4} ux={ux} uy={uy} grid/>
+    {tri&&<polygon points={`${Ax},${Ay} ${Bx},${Ay} ${Bx},${By}`} fill="rgba(59,130,246,0.10)" style={{transition:TR}}/>}
+    <line x1={Ax} y1={Ay} x2={Bx} y2={Ay} stroke={hi(dx,"#f97316")} strokeWidth={dx?2.5:0} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={Bx} y1={Ay} x2={Bx} y2={By} stroke={hi(dy,"#10b981")} strokeWidth={dy?2.5:0} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={Ax} y1={Ay} x2={Bx} y2={By} stroke={hi(hyp,"#ef4444")} strokeWidth={hyp?2.8:0} strokeLinecap="round" style={{transition:TR}}/>
+    {tri&&<RA x={Bx} y={Ay} s={8} r={180}/>}
+    {dx&&<Lbl x={(Ax+Bx)/2-6} y={Ay+15} fill="#ea580c" fw="700">Δx=3</Lbl>}
+    {dy&&<Lbl x={Bx+5} y={(Ay+By)/2+4} fill="#059669" fw="700">Δy=2</Lbl>}
+    {hyp&&<Lbl x={(Ax+Bx)/2-22} y={(Ay+By)/2-4} fill="#dc2626" fw="700">d=√13</Lbl>}
+    <Pt x={Ax} y={Ay} label="A(1,1)" dx={-30} dy={-6} fill="#1e293b"/>
+    <Pt x={Bx} y={By} label="B(4,3)" dx={5} dy={-4} fill="#1e293b"/>
+    {res&&<Lbl x={10} y={20} fill="#10b981" fw="700">d ≈ 3.61 ✓</Lbl>}
+  </svg>;
+};
+
+/* 2 · Punto medio — A(-2,2), B(4,-2) */
+const Fig2=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=110,oy=95,ux=18,uy=18;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Ax=X(-2),Ay=Y(2),Bx=X(4),By=Y(-2),Mx=X(1),My=Y(0);
+  const sX=t>=0,sY=t>=1,fin=t>=2||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-4} xMax={5.5} yMin={-3.5} yMax={3.5} ux={ux} uy={uy} grid/>
+    <line x1={Ax} y1={Ay} x2={Bx} y2={By} stroke="#7c3aed" strokeWidth="2.2" strokeLinecap="round"/>
+    {sX&&<line x1={Ax} y1={Ay+30} x2={Bx} y2={By+30} stroke="#f97316" strokeWidth="1.6" strokeDasharray="4,3" opacity="0.6"/>}
+    <Pt x={Ax} y={Ay} label="A(−2,2)" dx={-50} dy={-5} fill="#1e293b"/>
+    <Pt x={Bx} y={By} label="B(4,−2)" dx={5} dy={14} fill="#1e293b"/>
+    {fin&&<Pt x={Mx} y={My} label="M(1,0)" dx={5} dy={-7} fill="#dc2626" r={4}/>}
+    {sX&&<Lbl x={5} y={172} fill="#ea580c" fw="700" fs={11}>x_M = (−2+4)/2 = 1</Lbl>}
+    {sY&&<Lbl x={5} y={185} fill="#059669" fw="700" fs={11}>y_M = (2−2)/2 = 0</Lbl>}
+    {fin&&<Lbl x={155} y={20} fill="#10b981" fw="700">M(1,0) ✓</Lbl>}
+  </svg>;
+};
+
+/* 3 · Perimetro triangolo — A(1,1), B(5,1), C(5,4) */
+const Fig3=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=30,oy=170,ux=28,uy=28;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Ax=X(1),Ay=Y(1),Bx=X(5),By=Y(1),Cx=X(5),Cy=Y(4);
+  const ab=t>=0,bc=t>=1,ca=t>=2,fin=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-0.3} xMax={6} yMin={-0.3} yMax={5} ux={ux} uy={uy} grid/>
+    <polygon points={`${Ax},${Ay} ${Bx},${By} ${Cx},${Cy}`} fill="rgba(234,88,12,0.08)" stroke="#94a3b8" strokeWidth="1"/>
+    <line x1={Ax} y1={Ay} x2={Bx} y2={By} stroke={hi(ab,"#3b82f6")} strokeWidth={ab?3:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={Bx} y1={By} x2={Cx} y2={Cy} stroke={hi(bc,"#10b981")} strokeWidth={bc?3:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={Cx} y1={Cy} x2={Ax} y2={Ay} stroke={hi(ca,"#dc2626")} strokeWidth={ca?3:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    {ab&&<Lbl x={(Ax+Bx)/2-12} y={Ay+16} fill="#2563eb" fw="700">AB=4</Lbl>}
+    {bc&&<Lbl x={Bx+5} y={(By+Cy)/2+4} fill="#059669" fw="700">BC=3</Lbl>}
+    {ca&&<Lbl x={(Ax+Cx)/2-32} y={(Ay+Cy)/2-2} fill="#dc2626" fw="700">CA=5</Lbl>}
+    <Pt x={Ax} y={Ay} label="A(1,1)" dx={-32} dy={14} fill="#1e293b"/>
+    <Pt x={Bx} y={By} label="B(5,1)" dx={5} dy={14} fill="#1e293b"/>
+    <Pt x={Cx} y={Cy} label="C(5,4)" dx={5} dy={-4} fill="#1e293b"/>
+    {fin&&<Lbl x={50} y={28} fill="#10b981" fw="700">p = 12 unità ✓</Lbl>}
+  </svg>;
+};
+
+/* 4 · Diagonali parallelogramma — A(0,0), B(4,0), C(5,3), D(1,3) */
+const Fig4=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=30,oy=170,ux=28,uy=28;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Ax=X(0),Ay=Y(0),Bx=X(4),By=Y(0),Cx=X(5),Cy=Y(3),Dx=X(1),Dy=Y(3);
+  const Mx=X(2.5),My=Y(1.5);
+  const diag=t>=0,mac=t>=1,mbd=t>=2,fin=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-0.3} xMax={6.5} yMin={-0.3} yMax={4} ux={ux} uy={uy} grid/>
+    <polygon points={`${Ax},${Ay} ${Bx},${By} ${Cx},${Cy} ${Dx},${Dy}`} fill="rgba(124,58,237,0.08)" stroke="#475569" strokeWidth="2"/>
+    <line x1={Ax} y1={Ay} x2={Cx} y2={Cy} stroke={hi(diag,"#ef4444")} strokeWidth={diag?2.2:0} strokeDasharray="6,3" style={{transition:TR}}/>
+    <line x1={Bx} y1={By} x2={Dx} y2={Dy} stroke={hi(diag,"#3b82f6")} strokeWidth={diag?2.2:0} strokeDasharray="6,3" style={{transition:TR}}/>
+    {mac&&<Pt x={Mx} y={My} fill="#dc2626" r={4}/>}
+    {mbd&&<Pt x={Mx} y={My} fill="#2563eb" r={6}/>}
+    {fin&&<Pt x={Mx} y={My} fill="#10b981" r={5}/>}
+    <Pt x={Ax} y={Ay} label="A(0,0)" dx={-32} dy={14} fill="#1e293b"/>
+    <Pt x={Bx} y={By} label="B(4,0)" dx={3} dy={14} fill="#1e293b"/>
+    <Pt x={Cx} y={Cy} label="C(5,3)" dx={5} dy={-4} fill="#1e293b"/>
+    <Pt x={Dx} y={Dy} label="D(1,3)" dx={-32} dy={-4} fill="#1e293b"/>
+    {mac&&<Lbl x={120} y={20} fill="#dc2626" fw="700" fs={11}>M(AC) = (2.5, 1.5)</Lbl>}
+    {mbd&&<Lbl x={120} y={32} fill="#2563eb" fw="700" fs={11}>M(BD) = (2.5, 1.5)</Lbl>}
+    {fin&&<Lbl x={120} y={50} fill="#10b981" fw="700" fs={11}>Coincidono ✓</Lbl>}
+  </svg>;
+};
+
+/* 5 · Equazione retta y=mx+q (esempio y=2x+1) */
+const Fig5=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=110,ux=22,uy=22;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const m=2,q=1;
+  const showQ=t>=0,showM=t>=1,verify=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-3} xMax={3} yMin={-3} yMax={3.5} ux={ux} uy={uy} grid/>
+    <line x1={X(-2)} y1={Y(m*(-2)+q)} x2={X(1.2)} y2={Y(m*1.2+q)} stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round"/>
+    {showM&&<><line x1={X(0)} y1={Y(1)} x2={X(1)} y2={Y(1)} stroke="#f97316" strokeWidth="2"/>
+      <line x1={X(1)} y1={Y(1)} x2={X(1)} y2={Y(3)} stroke="#10b981" strokeWidth="2"/>
+      <Lbl x={X(0.5)-6} y={Y(1)+13} fill="#ea580c" fw="700" fs={10}>+1</Lbl>
+      <Lbl x={X(1)+4} y={Y(2)+3} fill="#059669" fw="700" fs={10}>+2</Lbl></>}
+    {showQ&&<Pt x={X(0)} y={Y(q)} label="(0, q=1)" dx={6} dy={-5} fill="#dc2626" r={4}/>}
+    <Lbl x={X(1.3)+4} y={Y(m*1.3+q)+4} fill="#2563eb" fw="700">y=2x+1</Lbl>
+    {showM&&<Lbl x={X(1)+10} y={Y(2)-12} fill="#7c3aed" fw="700" fs={11}>m = 2</Lbl>}
+    {verify&&<><Pt x={X(1)} y={Y(3)} fill="#10b981" r={4}/><Lbl x={10} y={20} fill="#10b981" fw="700" fs={11}>(1, 3): 2·1+1=3 ✓</Lbl></>}
+  </svg>;
+};
+
+/* 6 · Calcolo pendenza — P1(0,1), P2(2,5) */
+const Fig6=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=80,oy=160,ux=28,uy=22;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const dy=t>=1,dx=t>=2,res=t>=3,fin=t===4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-1} xMax={5} yMin={-0.5} yMax={6.5} ux={ux} uy={uy} grid/>
+    <line x1={X(-0.5)} y1={Y(2*(-0.5)+1)} x2={X(3)} y2={Y(2*3+1)} stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1={X(0)} y1={Y(1)} x2={X(2)} y2={Y(1)} stroke={hi(dx,"#f97316")} strokeWidth={dx?2.5:0} style={{transition:TR}}/>
+    <line x1={X(2)} y1={Y(1)} x2={X(2)} y2={Y(5)} stroke={hi(dy,"#10b981")} strokeWidth={dy?2.5:0} style={{transition:TR}}/>
+    {dx&&<Lbl x={X(1)-8} y={Y(1)+14} fill="#ea580c" fw="700" fs={11}>Δx=2</Lbl>}
+    {dy&&<Lbl x={X(2)+5} y={Y(3)+4} fill="#059669" fw="700" fs={11}>Δy=4</Lbl>}
+    <Pt x={X(0)} y={Y(1)} label="P₁(0,1)" dx={-46} dy={4} fill="#1e293b"/>
+    <Pt x={X(2)} y={Y(5)} label="P₂(2,5)" dx={5} dy={-4} fill="#1e293b"/>
+    {res&&<Lbl x={120} y={28} fill="#7c3aed" fw="700" fs={13}>m = 4/2 = 2</Lbl>}
+    {fin&&<Lbl x={120} y={45} fill="#10b981" fw="700" fs={11}>retta crescente ✓</Lbl>}
+  </svg>;
+};
+
+/* 7 · Retta per due punti — A(1,3), B(4,-3) → y=-2x+5 */
+const Fig7=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=50,oy=100,ux=22,uy=20;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const showM=t>=0,line=t>=2,verify=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-1} xMax={6} yMin={-4} yMax={5} ux={ux} uy={uy} grid/>
+    {line&&<line x1={X(-0.2)} y1={Y(-2*(-0.2)+5)} x2={X(5.5)} y2={Y(-2*5.5+5)} stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" style={{transition:TR}}/>}
+    {showM&&!line&&<><line x1={X(1)} y1={Y(3)} x2={X(4)} y2={Y(3)} stroke="#f97316" strokeWidth="2"/>
+      <line x1={X(4)} y1={Y(3)} x2={X(4)} y2={Y(-3)} stroke="#10b981" strokeWidth="2"/>
+      <Lbl x={X(2.5)-8} y={Y(3)-5} fill="#ea580c" fw="700" fs={10}>Δx=3</Lbl>
+      <Lbl x={X(4)+5} y={Y(0)+4} fill="#059669" fw="700" fs={10}>Δy=−6</Lbl></>}
+    <Pt x={X(1)} y={Y(3)} label="A(1,3)" dx={-46} dy={-3} fill="#1e293b"/>
+    <Pt x={X(4)} y={Y(-3)} label="B(4,−3)" dx={5} dy={14} fill="#1e293b"/>
+    {showM&&<Lbl x={130} y={20} fill="#7c3aed" fw="700" fs={11}>m = −6/3 = −2</Lbl>}
+    {verify&&<Lbl x={130} y={35} fill="#10b981" fw="700" fs={11}>y = −2x + 5 ✓</Lbl>}
+  </svg>;
+};
+
+/* 8 · Parallele e perpendicolari */
+const Fig8=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=100,ux=18,uy=18;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const par=t===0,perp=t===1,fin=t>=2||t===99;
+  const showPar=par||fin, showPerp=perp||fin;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-5} xMax={5} yMin={-4} yMax={4} ux={ux} uy={uy} grid/>
+    <line x1={X(-3)} y1={Y(2*(-3)+1)} x2={X(2)} y2={Y(2*2+1)} stroke={hi(showPar,"#2563eb","#cbd5e1")} strokeWidth={showPar?2.5:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={X(-2)} y1={Y(2*(-2)-3)} x2={X(3)} y2={Y(2*3-3)} stroke={hi(showPar,"#2563eb","#cbd5e1")} strokeWidth={showPar?2.5:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={X(-3)} y1={Y(2*(-3))} x2={X(3)} y2={Y(2*3)} stroke={hi(showPerp,"#dc2626","#cbd5e1")} strokeWidth={showPerp?2.5:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    <line x1={X(-3)} y1={Y(-(-3)/2)} x2={X(3)} y2={Y(-3/2)} stroke={hi(showPerp,"#dc2626","#cbd5e1")} strokeWidth={showPerp?2.5:1.5} strokeLinecap="round" style={{transition:TR}}/>
+    {showPar&&<><Lbl x={X(2)+4} y={Y(5)+5} fill="#2563eb" fw="700" fs={10}>m=2</Lbl><Lbl x={X(3)+4} y={Y(3)+5} fill="#2563eb" fw="700" fs={10}>m=2</Lbl></>}
+    {showPerp&&<><Lbl x={X(-3)-4} y={Y(-5.5)} fill="#dc2626" fw="700" fs={10}>m=2</Lbl><Lbl x={X(3)+4} y={Y(-1.5)+4} fill="#dc2626" fw="700" fs={10}>m=−½</Lbl></>}
+    {par&&<Lbl x={10} y={20} fill="#2563eb" fw="700" fs={12}>PARALLELE: m₁ = m₂</Lbl>}
+    {perp&&<Lbl x={10} y={20} fill="#dc2626" fw="700" fs={12}>PERPENDICOLARI: m₁·m₂ = −1</Lbl>}
+    {fin&&<Lbl x={10} y={20} fill="#10b981" fw="700" fs={11}>2·(−½) = −1 ✓</Lbl>}
+  </svg>;
+};
+
+/* 9 · Distanza punto-retta — P(3,3), 2x+y-2=0 */
+const Fig9=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=80,oy=110,ux=20,uy=18;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Px=X(3),Py=Y(3);
+  const Hx=X(0.2),Hy=Y(1.6);
+  const showP=t>=0,coeff=t>=1,perp=t>=2,fin=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-3} xMax={6} yMin={-3} yMax={4} ux={ux} uy={uy} grid/>
+    <line x1={X(-1)} y1={Y(-2*(-1)+2)} x2={X(3)} y2={Y(-2*3+2)} stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round"/>
+    <Lbl x={X(-1)+4} y={Y(4)} fill="#2563eb" fw="700" fs={11}>2x+y−2=0</Lbl>
+    <Pt x={Px} y={Py} label="P(3,3)" dx={5} dy={-4} fill="#1e293b"/>
+    {perp&&<line x1={Px} y1={Py} x2={Hx} y2={Hy} stroke="#dc2626" strokeWidth="1.8" strokeDasharray="5,3" style={{transition:TR}}/>}
+    {fin&&<Pt x={Hx} y={Hy} fill="#dc2626" r={3}/>}
+    {coeff&&<Lbl x={130} y={150} fill="#7c3aed" fw="700" fs={11}>a=2, b=1, c=−2</Lbl>}
+    {fin&&<Lbl x={130} y={170} fill="#10b981" fw="700" fs={11}>d = 7/√5 ≈ 3.13 ✓</Lbl>}
+  </svg>;
+};
+
+/* 10 · Punto minima distanza — y=2x+1, P(4,0) → Q(2/5, 9/5) */
+const Fig10=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=60,oy=130,ux=20,uy=15;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Px=X(4),Py=Y(0),Qx=X(0.4),Qy=Y(1.8);
+  const mp=t>=0,perp=t>=1,sis=t>=2,fin=t>=3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-2} xMax={7} yMin={-1.5} yMax={6} ux={ux} uy={uy} grid/>
+    <line x1={X(-1.5)} y1={Y(2*(-1.5)+1)} x2={X(2.5)} y2={Y(2*2.5+1)} stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round"/>
+    <Lbl x={X(2.5)+4} y={Y(6)+5} fill="#2563eb" fw="700" fs={11}>y=2x+1</Lbl>
+    {perp&&<line x1={X(-1)} y1={Y(-(-1)/2+2)} x2={X(6)} y2={Y(-6/2+2)} stroke="#dc2626" strokeWidth="2" strokeDasharray="5,3" style={{transition:TR}}/>}
+    {perp&&<Lbl x={X(6)+4} y={Y(-1)} fill="#dc2626" fw="700" fs={10}>y=−x/2+2</Lbl>}
+    <Pt x={Px} y={Py} label="P(4,0)" dx={5} dy={14} fill="#1e293b"/>
+    {sis&&<Pt x={Qx} y={Qy} fill="#10b981" r={4}/>}
+    {fin&&<Pt x={Qx} y={Qy} label="Q(2/5,9/5)" dx={-66} dy={-6} fill="#10b981" r={4}/>}
+    {fin&&<Lbl x={10} y={20} fill="#10b981" fw="700" fs={11}>Q minimo: distanza ⊥ ✓</Lbl>}
+  </svg>;
+};
+
+
+/* 11 · Anatomia parabola — y = ¼x² (riferimento) */
+const Fig11=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=145,ux=18,uy=15;
+  const a=0.25,b=0,c=0;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const showCon=t>=0,showV=t>=1,showAxis=t>=2,showFD=t>=3||t===99;
+  const Vx=X(0),Vy=Y(0);
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-5} xMax={5} yMin={-1.5} yMax={5} ux={ux} uy={uy}/>
+    <path d={paraPath(a,b,c,-4.2,4.2,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.6"/>
+    {showAxis&&<line x1={Vx} y1={Y(-1.5)} x2={Vx} y2={Y(5)} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>}
+    {showFD&&<><line x1={X(-4.5)} y1={Y(-1)} x2={X(4.5)} y2={Y(-1)} stroke="#dc2626" strokeWidth="2" strokeLinecap="round"/>
+      <Pt x={Vx} y={Y(1)} fill="#dc2626" r={4}/>
+      <Lbl x={Vx+6} y={Y(1)+4} fill="#dc2626" fw="700" fs={11}>F(0,1)</Lbl>
+      <Lbl x={X(-4.5)+4} y={Y(-1)+13} fill="#dc2626" fw="700" fs={10}>direttrice  y = −1</Lbl></>}
+    {showV&&<Pt x={Vx} y={Vy} fill="#2563eb" r={4}/>}
+    {showV&&<Lbl x={Vx+6} y={Vy+15} fill="#2563eb" fw="700" fs={11}>V(0,0)</Lbl>}
+    {showAxis&&<Lbl x={Vx+6} y={Y(4)} fill="#ea580c" fw="700" fs={10}>asse  x=0</Lbl>}
+    {showCon&&<Lbl x={X(-4)} y={Y(4.5)} fill="#7c3aed" fw="700" fs={11}>a {">"}{" "}0 → ∪</Lbl>}
+  </svg>;
+};
+
+/* 12 · Studio parabola y = 2x²-4x-6, V(1,-8), radici -1,3, intercetta (0,-6) */
+const Fig12=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=100,oy=70,ux=18,uy=8;
+  const a=2,b=-4,c=-6;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Vx=X(1),Vy=Y(-8);
+  const showD=t>=0,showV=t>=1,showFD=t>=2,showR=t>=3,showI=t>=4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-3} xMax={5.5} yMin={-10} yMax={4} ux={ux} uy={uy}/>
+    <path d={paraPath(a,b,c,-2,4,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.5"/>
+    {showR&&<><Pt x={X(-1)} y={Y(0)} fill="#dc2626" r={4}/><Pt x={X(3)} y={Y(0)} fill="#dc2626" r={4}/>
+      <Lbl x={X(-1)-12} y={Y(0)-6} fill="#dc2626" fw="700" fs={10}>−1</Lbl>
+      <Lbl x={X(3)+4} y={Y(0)-6} fill="#dc2626" fw="700" fs={10}>3</Lbl></>}
+    {showI&&<Pt x={X(0)} y={Y(-6)} fill="#10b981" r={4}/>}
+    {showI&&<Lbl x={X(0)-44} y={Y(-6)+4} fill="#10b981" fw="700" fs={10}>(0,−6)</Lbl>}
+    {showV&&<Pt x={Vx} y={Vy} fill="#2563eb" r={4}/>}
+    {showV&&<Lbl x={Vx+5} y={Vy+5} fill="#2563eb" fw="700" fs={11}>V(1,−8)</Lbl>}
+    {showD&&<Lbl x={140} y={20} fill="#7c3aed" fw="700" fs={11}>Δ = 64</Lbl>}
+    {showFD&&<Lbl x={140} y={36} fill="#dc2626" fw="700" fs={10}>F(1, −63/8)</Lbl>}
+    {showI&&<Lbl x={140} y={52} fill="#10b981" fw="700" fs={10}>radici e int. ✓</Lbl>}
+  </svg>;
+};
+
+/* 13 · Intersezione retta-parabola — y=2x e y=x²-2x → (0,0), (4,8) */
+const Fig13=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=50,oy=160,ux=28,uy=14;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const showSys=t>=0,solve=t>=1,roots=t>=2,fin=t>=3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-1} xMax={6} yMin={-2} yMax={9} ux={ux} uy={uy}/>
+    <path d={paraPath(1,-2,0,-0.5,5,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.5"/>
+    <line x1={X(-0.5)} y1={Y(2*(-0.5))} x2={X(5)} y2={Y(2*5)} stroke="#2563eb" strokeWidth="2.3" strokeLinecap="round"/>
+    <Lbl x={X(-0.5)+2} y={Y(8.5)} fill="#7c3aed" fw="700" fs={10}>y=x²−2x</Lbl>
+    <Lbl x={X(4.6)+2} y={Y(8)+4} fill="#2563eb" fw="700" fs={10}>y=2x</Lbl>
+    {roots&&<><Pt x={X(0)} y={Y(0)} fill="#10b981" r={4}/><Pt x={X(4)} y={Y(8)} fill="#10b981" r={4}/></>}
+    {fin&&<><Lbl x={X(0)-8} y={Y(0)+14} fill="#10b981" fw="700" fs={10}>(0,0)</Lbl>
+      <Lbl x={X(4)+5} y={Y(8)} fill="#10b981" fw="700" fs={10}>(4,8)</Lbl></>}
+    {showSys&&<Lbl x={130} y={26} fill="#7c3aed" fw="700" fs={11}>x² = 4x</Lbl>}
+    {solve&&<Lbl x={130} y={42} fill="#dc2626" fw="700" fs={11}>x(x−4)=0</Lbl>}
+    {fin&&<Lbl x={130} y={58} fill="#10b981" fw="700" fs={11}>x=0, x=4 ✓</Lbl>}
+  </svg>;
+};
+
+/* 14 · Tangenza — y=2x+k tangente a y=x²+2 → k=1, T(1,3) */
+const Fig14=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=170,ux=22,uy=20;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const showSec=t===1,showDelta=t>=2,showTan=t>=3,fin=t>=4||t===99;
+  const Tx=X(1),Ty=Y(3);
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-3} xMax={3} yMin={-1} yMax={7} ux={ux} uy={uy}/>
+    <path d={paraPath(1,0,2,-2.3,2.3,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.6"/>
+    <Lbl x={X(-2.3)} y={Y(6.5)} fill="#7c3aed" fw="700" fs={10}>y=x²+2</Lbl>
+    {showSec&&!fin&&<><line x1={X(-1.5)} y1={Y(2*(-1.5)+4)} x2={X(2.3)} y2={Y(2*2.3+4)} stroke="#94a3b8" strokeWidth="1.8" strokeDasharray="4,3"/>
+      <Lbl x={X(1.7)+4} y={Y(2*1.7+4)} fill="#64748b" fw="700" fs={10}>k=4? Δ{">"}0</Lbl></>}
+    {(showTan||fin)&&<line x1={X(-1.3)} y1={Y(2*(-1.3)+1)} x2={X(2.3)} y2={Y(2*2.3+1)} stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round"/>}
+    {(showTan||fin)&&<Lbl x={X(2)+4} y={Y(5)+10} fill="#dc2626" fw="700" fs={10}>y=2x+1</Lbl>}
+    {fin&&<Pt x={Tx} y={Ty} fill="#10b981" r={4}/>}
+    {fin&&<Lbl x={Tx+5} y={Ty-5} fill="#10b981" fw="700" fs={11}>T(1,3)</Lbl>}
+    {showDelta&&<Lbl x={10} y={20} fill="#dc2626" fw="700" fs={11}>Δ=0 → k=1</Lbl>}
+  </svg>;
+};
+
+/* 15 · Parabola per 3 punti — A(0,3), B(1,0), C(-1,8) → y=x²-4x+3 */
+const Fig15=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=90,oy=140,ux=22,uy=12;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Ax=X(0),Ay=Y(3),Bx=X(1),By=Y(0),Cx=X(-1),Cy=Y(8);
+  const sA=t>=0,sB=t>=1,sC=t>=2,sol=t>=3,fin=t>=4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-2} xMax={5} yMin={-2} yMax={9} ux={ux} uy={uy}/>
+    {fin&&<path d={paraPath(1,-4,3,-1.3,4.3,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.5" style={{transition:TR}}/>}
+    <Pt x={Ax} y={Ay} label="A(0,3)" dx={5} dy={-4} fill={hi(sA,"#dc2626","#94a3b8")} r={4}/>
+    <Pt x={Bx} y={By} label="B(1,0)" dx={5} dy={14} fill={hi(sB,"#2563eb","#94a3b8")} r={4}/>
+    <Pt x={Cx} y={Cy} label="C(−1,8)" dx={-50} dy={-2} fill={hi(sC,"#10b981","#94a3b8")} r={4}/>
+    {sA&&<Lbl x={140} y={20} fill="#dc2626" fw="700" fs={10}>c = 3</Lbl>}
+    {sB&&<Lbl x={140} y={34} fill="#2563eb" fw="700" fs={10}>a + b = −3</Lbl>}
+    {sC&&<Lbl x={140} y={48} fill="#10b981" fw="700" fs={10}>a − b = 5</Lbl>}
+    {sol&&<Lbl x={140} y={62} fill="#7c3aed" fw="700" fs={10}>a=1, b=−4</Lbl>}
+    {fin&&<Lbl x={130} y={180} fill="#10b981" fw="700" fs={11}>y=x²−4x+3 ✓</Lbl>}
+  </svg>;
+};
+
+/* 16 · Tangente e normale — T(1,3) su y=x²+2, m_t=2, m_n=-1/2 */
+const Fig16=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=170,ux=22,uy=20;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const Tx=X(1),Ty=Y(3);
+  const showT=t>=0,showM=t>=1,showN=t>=2,fin=t>=3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-3} xMax={3} yMin={-1} yMax={7} ux={ux} uy={uy}/>
+    <path d={paraPath(1,0,2,-2.3,2.3,ox,oy,ux,uy)} fill="none" stroke="#7c3aed" strokeWidth="2.6"/>
+    <line x1={X(-1.3)} y1={Y(2*(-1.3)+1)} x2={X(2.3)} y2={Y(2*2.3+1)} stroke={hi(showT,"#dc2626","#cbd5e1")} strokeWidth="2.5" strokeLinecap="round"/>
+    {showT&&<Lbl x={X(2)+4} y={Y(5)+10} fill="#dc2626" fw="700" fs={10}>tang. m=2</Lbl>}
+    {showN&&<line x1={X(-2.5)} y1={Y(-(-2.5)/2+3.5)} x2={X(2.5)} y2={Y(-2.5/2+3.5)} stroke="#2563eb" strokeWidth="2.3" strokeLinecap="round" style={{transition:TR}}/>}
+    {showN&&<Lbl x={X(2.5)} y={Y(2.25)} fill="#2563eb" fw="700" fs={10}>norm. m=−½</Lbl>}
+    {fin&&<RA x={Tx} y={Ty} s={7} r={26.6}/>}
+    <Pt x={Tx} y={Ty} fill="#10b981" r={4}/>
+    <Lbl x={Tx+5} y={Ty-5} fill="#10b981" fw="700" fs={11}>T(1,3)</Lbl>
+    {showM&&<Lbl x={10} y={20} fill="#7c3aed" fw="700" fs={11}>m_t · m_n = −1</Lbl>}
+    {fin&&<Lbl x={10} y={36} fill="#10b981" fw="700" fs={10}>y = −x/2 + 7/2 ✓</Lbl>}
+  </svg>;
+};
+
+const FIGS={1:Fig1,2:Fig2,3:Fig3,4:Fig4,5:Fig5,6:Fig6,7:Fig7,8:Fig8,9:Fig9,10:Fig10,11:Fig11,12:Fig12,13:Fig13,14:Fig14,15:Fig15,16:Fig16};
+
+/* ── DATA ─────────────────────────────────────────────── */
+const CARDS=[
+  {id:1,title:"Distanza tra due punti",cat:"Piano Cartesiano",diff:1,
+    stmt:"La distanza tra A(x₁,y₁) e B(x₂,y₂) si calcola con d = √((x₂−x₁)² + (y₂−y₁)²), formula derivata dal teorema di Pitagora.",
+    hyp:"A(1, 1) e B(4, 3)",tesi:"d(A,B) = √13 ≈ 3.61 unità",
+    idea:"💡 Costruisci il triangolo rettangolo con i cateti paralleli agli assi: la distanza è l'ipotenusa.",
+    steps:[
+      {ti:"Differenza delle ascisse",tx:"Δx = x₂ − x₁ = 4 − 1 = 3",hi:"Δx misura lo spostamento orizzontale tra A e B."},
+      {ti:"Differenza delle ordinate",tx:"Δy = y₂ − y₁ = 3 − 1 = 2",hi:"Δy misura lo spostamento verticale."},
+      {ti:"Costruisci il triangolo rettangolo",tx:"I segmenti Δx e Δy sono i cateti; il segmento AB è l'ipotenusa.",hi:"L'angolo retto si forma perché un cateto è orizzontale e l'altro verticale."},
+      {ti:"Applica il teorema di Pitagora",tx:"d² = Δx² + Δy² = 9 + 4 = 13   →   d = √13",hi:"In ogni triangolo rettangolo, ipotenusa² = somma dei quadrati dei cateti."},
+      {ti:"Risultato",tx:"d(A,B) = √13 ≈ 3.61 unità ✓",hi:"Conserva sempre il valore esatto in radice quando possibile; il decimale è solo un'approssimazione."}
+    ]},
+  {id:2,title:"Punto medio di un segmento",cat:"Piano Cartesiano",diff:1,
+    stmt:"Il punto medio M di un segmento ha coordinate uguali alla media aritmetica delle coordinate degli estremi.",
+    hyp:"A(−2, 2) e B(4, −2)",tesi:"M(1, 0)",
+    idea:"💡 La media è il valore equidistante: la applichi separatamente alle ascisse e alle ordinate.",
+    steps:[
+      {ti:"Coordinata x del punto medio",tx:"x_M = (x_A + x_B)/2 = (−2 + 4)/2 = 1",hi:"Sommi le ascisse e dividi per 2."},
+      {ti:"Coordinata y del punto medio",tx:"y_M = (y_A + y_B)/2 = (2 + (−2))/2 = 0",hi:"Stesso procedimento per le ordinate."},
+      {ti:"Concludi",tx:"M = (1, 0) ✓",hi:"Verifica veloce: AM e MB devono essere uguali, e infatti lo sono."}
+    ]},
+  {id:3,title:"Perimetro di un triangolo",cat:"Piano Cartesiano",diff:2,
+    stmt:"Calcola il perimetro del triangolo di vertici A(1,1), B(5,1), C(5,4).",
+    hyp:"A(1,1), B(5,1), C(5,4)",tesi:"p = 12 unità",
+    idea:"💡 Riconoscere i lati paralleli agli assi rende il calcolo immediato: bastano differenze in valore assoluto.",
+    steps:[
+      {ti:"Lato AB (orizzontale)",tx:"A e B hanno la stessa ordinata (y=1) → AB è orizzontale.  AB = |x_B − x_A| = |5 − 1| = 4",hi:"Quando due punti condividono la y, il segmento è orizzontale."},
+      {ti:"Lato BC (verticale)",tx:"B e C hanno la stessa ascissa (x=5) → BC è verticale.  BC = |y_C − y_B| = |4 − 1| = 3",hi:"Quando due punti condividono la x, il segmento è verticale."},
+      {ti:"Lato CA (diagonale)",tx:"CA = √((x_C − x_A)² + (y_C − y_A)²) = √(16 + 9) = √25 = 5",hi:"Per i lati obliqui usa sempre la formula generale della distanza."},
+      {ti:"Somma dei tre lati",tx:"p = AB + BC + CA = 4 + 3 + 5 = 12 unità ✓",hi:"Il triangolo è una terna pitagorica 3-4-5 → è rettangolo in B."}
+    ]},
+  {id:4,title:"Riconoscere un parallelogramma",cat:"Piano Cartesiano",diff:2,
+    stmt:"Verifica che il quadrilatero ABCD con A(0,0), B(4,0), C(5,3), D(1,3) è un parallelogramma.",
+    hyp:"A(0,0), B(4,0), C(5,3), D(1,3)",tesi:"M(AC) = M(BD) → ABCD parallelogramma",
+    idea:"💡 Una proprietà caratterizzante del parallelogramma: le diagonali si bisecano. Basta verificare che i punti medi delle diagonali coincidano.",
+    steps:[
+      {ti:"Individua le diagonali",tx:"Le diagonali del quadrilatero ABCD sono AC e BD.",hi:"In un quadrilatero ABCD, le diagonali uniscono vertici opposti: A↔C e B↔D."},
+      {ti:"Punto medio di AC",tx:"M(AC) = ((0+5)/2, (0+3)/2) = (2.5, 1.5)",hi:"Applica la formula del punto medio dimostrata in precedenza."},
+      {ti:"Punto medio di BD",tx:"M(BD) = ((4+1)/2, (0+3)/2) = (2.5, 1.5)",hi:"Stesso procedimento per l'altra diagonale."},
+      {ti:"Concludi",tx:"I punti medi coincidono → le diagonali si bisecano → ABCD è un parallelogramma ✓",hi:"È una caratterizzazione: vale anche il viceversa."}
+    ]},
+  {id:5,title:"Equazione esplicita y = mx + q",cat:"La Retta",diff:1,
+    stmt:"Una retta non verticale è descritta dall'equazione y = mx + q, dove m è la pendenza e q l'intercetta sull'asse y.",
+    hyp:"Retta non verticale nel piano cartesiano",tesi:"y = mx + q  (m, q ∈ ℝ)",
+    idea:"💡 q dice 'dove la retta taglia l'asse y'; m dice 'quanto sale ogni passo orizzontale'.",
+    steps:[
+      {ti:"Intercetta q",tx:"Per x = 0 si ottiene y = q: la retta interseca l'asse y nel punto (0, q).",hi:"Sostituisci x=0 nell'equazione e ricavi y."},
+      {ti:"Pendenza m",tx:"m è il coefficiente angolare: indica di quanto cambia y quando x aumenta di 1.",hi:"m = Δy / Δx tra due punti qualsiasi della retta."},
+      {ti:"Esempio: y = 2x + 1",tx:"Intercetta in (0, 1); per ogni passo orizzontale di +1, y sale di +2.",hi:"Visualizza il 'triangolo della pendenza' con cateti +1 e +2."},
+      {ti:"Verifica con un punto",tx:"Il punto (1, 3) appartiene alla retta? 3 = 2·1 + 1 = 3 ✓",hi:"Per verificare l'appartenenza, sostituisci nelle coordinate: l'equazione deve essere soddisfatta."}
+    ]},
+  {id:6,title:"Calcolo della pendenza",cat:"La Retta",diff:1,
+    stmt:"La pendenza di una retta passante per due punti è m = (y₂ − y₁)/(x₂ − x₁) = tan(α), dove α è l'angolo che la retta forma con l'asse x.",
+    hyp:"P₁(0, 1) e P₂(2, 5)",tesi:"m = 2",
+    idea:"💡 La pendenza è la 'salita per ogni passo orizzontale'. Geometricamente, è la tangente dell'angolo che la retta forma con l'asse x.",
+    steps:[
+      {ti:"Identifica i due punti",tx:"P₁(0, 1) → x₁=0, y₁=1.   P₂(2, 5) → x₂=2, y₂=5.",hi:"Etichetta sempre i punti per evitare errori di segno."},
+      {ti:"Calcola Δy",tx:"Δy = y₂ − y₁ = 5 − 1 = 4",hi:"È fondamentale rispettare l'ordine: stesso 'pedice' al numeratore e al denominatore."},
+      {ti:"Calcola Δx",tx:"Δx = x₂ − x₁ = 2 − 0 = 2",hi:"Δx ≠ 0, altrimenti la retta sarebbe verticale e m non esisterebbe."},
+      {ti:"Pendenza",tx:"m = Δy / Δx = 4 / 2 = 2",hi:"Se inverti l'ordine di P₁ e P₂, sia Δx sia Δy cambiano segno: il rapporto resta lo stesso."},
+      {ti:"Interpretazione",tx:"m = 2 > 0 e > 1: retta crescente, ripida (angolo > 45°).",hi:"Tabella mentale: m>0 cresce, m<0 decresce, m=0 orizzontale, |m|>1 ripida."}
+    ]},
+  {id:7,title:"Retta passante per due punti",cat:"La Retta",diff:2,
+    stmt:"Trova l'equazione della retta passante per A(1, 3) e B(4, −3).",
+    hyp:"A(1, 3), B(4, −3)",tesi:"y = −2x + 5",
+    idea:"💡 Procedimento standard: prima la pendenza, poi sostituisci in y − y₀ = m(x − x₀) usando uno dei due punti.",
+    steps:[
+      {ti:"Calcola la pendenza",tx:"m = (y_B − y_A)/(x_B − x_A) = (−3 − 3)/(4 − 1) = −6/3 = −2",hi:"Attento ai segni: −3 − 3 = −6, non 0!"},
+      {ti:"Forma punto-pendenza",tx:"Usando A(1,3): y − 3 = −2(x − 1)",hi:"Funzionerebbe ugualmente con B; il risultato finale sarà identico."},
+      {ti:"Sviluppa e semplifica",tx:"y − 3 = −2x + 2  →  y = −2x + 5",hi:"Distribuisci il −2 e isola y."},
+      {ti:"Verifica con l'altro punto",tx:"B(4,−3): −2·4 + 5 = −8 + 5 = −3 ✓",hi:"Sostituisci sempre l'altro punto: se l'equazione non torna, hai sbagliato qualcosa."}
+    ]},
+  {id:8,title:"Rette parallele e perpendicolari",cat:"La Retta",diff:2,
+    stmt:"Due rette sono parallele se hanno la stessa pendenza; perpendicolari se il prodotto delle pendenze è −1.",
+    hyp:"Rette r: y = m₁x + q₁  e  s: y = m₂x + q₂",tesi:"r ∥ s ⟺ m₁ = m₂.   r ⊥ s ⟺ m₁·m₂ = −1",
+    idea:"💡 Stessa direzione → stessa pendenza. Direzione perpendicolare → pendenze 'reciproche e di segno opposto'.",
+    steps:[
+      {ti:"Rette parallele",tx:"y = 2x + 1  e  y = 2x − 3 hanno entrambe m = 2 → sono parallele (e distinte, perché q diversi).",hi:"Se anche le q coincidessero, sarebbero la stessa retta (coincidenti)."},
+      {ti:"Rette perpendicolari",tx:"y = 2x  e  y = −x/2 hanno m₁ = 2, m₂ = −1/2.  Prodotto: 2·(−1/2) = −1 → perpendicolari.",hi:"Per ottenere la perpendicolare a una retta data: scambia il segno e fai il reciproco di m."},
+      {ti:"Caso particolare delle rette verticali",tx:"Una retta verticale x = k non ha pendenza definita (m → ∞). È perpendicolare a ogni retta orizzontale y = h.",hi:"Le rette verticali e orizzontali si trattano sempre a parte."},
+      {ti:"In sintesi",tx:"Parallele: stessa direzione, stesso m.  Perpendicolari: si tagliano a 90°, m₁·m₂ = −1.",hi:"Memorizza la regola del prodotto: è la più usata negli esercizi."}
+    ]},
+  {id:9,title:"Distanza punto-retta",cat:"La Retta",diff:2,
+    stmt:"Calcola la distanza del punto P(3, 3) dalla retta r: 2x + y − 2 = 0.",
+    hyp:"P(3, 3), retta r: 2x + y − 2 = 0",tesi:"d(P, r) = 7/√5 = 7√5/5 ≈ 3.13",
+    idea:"💡 Porta sempre prima la retta in forma implicita ax + by + c = 0; poi applica la formula d = |ax₀+by₀+c| / √(a²+b²).",
+    steps:[
+      {ti:"Forma implicita: identifica a, b, c",tx:"r: 2x + y − 2 = 0  →  a = 2, b = 1, c = −2",hi:"Se la retta è data in forma esplicita y = mx + q, riscrivila come mx − y + q = 0."},
+      {ti:"Calcola il numeratore",tx:"|a·x_P + b·y_P + c| = |2·3 + 1·3 + (−2)| = |6 + 3 − 2| = |7| = 7",hi:"Il valore assoluto garantisce che la distanza sia non-negativa."},
+      {ti:"Calcola il denominatore",tx:"√(a² + b²) = √(4 + 1) = √5",hi:"Il denominatore dipende solo dalla retta, mai dal punto."},
+      {ti:"Risultato",tx:"d(P, r) = 7/√5 = 7√5/5 ≈ 3.13 ✓",hi:"Razionalizza il denominatore moltiplicando sopra e sotto per √5."}
+    ]},
+  {id:10,title:"Punto di minima distanza da una retta",cat:"La Retta",diff:3,
+    stmt:"Trova il punto della retta y = 2x + 1 che ha minima distanza dal punto P(4, 0).",
+    hyp:"Retta r: y = 2x + 1, punto P(4, 0)",tesi:"Q(2/5, 9/5)",
+    idea:"💡 Il punto più vicino è il piede della perpendicolare condotta da P alla retta r. Costruisci la perpendicolare per P e trovala.",
+    steps:[
+      {ti:"Pendenza della perpendicolare",tx:"r ha pendenza m = 2 → la perpendicolare ha m_⊥ = −1/2 (prodotto −1).",hi:"Riusa la regola del prodotto −1 dimostrata in precedenza."},
+      {ti:"Equazione della perpendicolare per P",tx:"y − 0 = −1/2 (x − 4)  →  y = −x/2 + 2",hi:"Forma punto-pendenza con (4, 0) e m = −1/2."},
+      {ti:"Sistema retta–perpendicolare",tx:"2x + 1 = −x/2 + 2  →  4x + 2 = −x + 4  →  5x = 2  →  x = 2/5",hi:"Per evitare frazioni, moltiplica entrambi i membri per 2 prima di risolvere."},
+      {ti:"Coordinate del punto Q",tx:"y = 2·(2/5) + 1 = 4/5 + 5/5 = 9/5  →  Q(2/5, 9/5) ✓",hi:"Sostituisci la x trovata in una delle due equazioni — meglio nella più semplice."}
+    ]},
+  {id:11,title:"Anatomia della parabola",cat:"La Parabola",diff:1,
+    stmt:"Una parabola y = ax² + bx + c (con a ≠ 0) ha vertice V, asse di simmetria, fuoco F e direttrice.",
+    hyp:"y = ax² + bx + c con a ≠ 0",tesi:"V(−b/2a, −Δ/4a); F(x_V, y_V + 1/4a); direttrice y = y_V − 1/4a",
+    idea:"💡 a determina la concavità e l'apertura; b e c spostano la parabola, ma le formule per V, F, direttrice restano le stesse.",
+    steps:[
+      {ti:"Concavità (segno di a)",tx:"a > 0 → parabola rivolta verso l'alto (V è punto di minimo).  a < 0 → verso il basso (V è massimo).",hi:"Più |a| è grande, più la parabola è 'stretta'."},
+      {ti:"Coordinate del vertice",tx:"x_V = −b/(2a);   y_V = −Δ/(4a),  dove Δ = b² − 4ac.   In alternativa: y_V = f(x_V).",hi:"Calcola sempre prima x_V; poi sostituiscilo per ottenere y_V (più rapido)."},
+      {ti:"Asse di simmetria",tx:"È la retta verticale x = x_V che passa per il vertice. La parabola è simmetrica rispetto a essa.",hi:"Due punti con la stessa y hanno x simmetriche rispetto a x_V."},
+      {ti:"Fuoco e direttrice",tx:"F(x_V, y_V + 1/(4a));   direttrice: retta orizzontale y = y_V − 1/(4a).",hi:"Definizione di parabola: luogo dei punti equidistanti da F e dalla direttrice."}
+    ]},
+  {id:12,title:"Studio completo: y = 2x² − 4x − 6",cat:"La Parabola",diff:3,
+    stmt:"Studia la parabola y = 2x² − 4x − 6: trova vertice, fuoco, direttrice, intersezioni con gli assi.",
+    hyp:"y = 2x² − 4x − 6  (a = 2, b = −4, c = −6)",tesi:"V(1, −8); radici x = −1 e x = 3; intercetta (0, −6)",
+    idea:"💡 Procedi sempre nello stesso ordine: discriminante → vertice → fuoco e direttrice → radici → intercetta sull'asse y.",
+    steps:[
+      {ti:"Discriminante",tx:"Δ = b² − 4ac = (−4)² − 4·2·(−6) = 16 + 48 = 64",hi:"Attento ai segni quando c è negativo: −4·2·(−6) = +48."},
+      {ti:"Coordinate del vertice",tx:"x_V = −b/(2a) = 4/4 = 1.   y_V = −Δ/(4a) = −64/8 = −8.   →  V(1, −8)",hi:"In alternativa: y_V = 2·1² − 4·1 − 6 = 2 − 4 − 6 = −8."},
+      {ti:"Fuoco e direttrice",tx:"1/(4a) = 1/8.   F(1, −8 + 1/8) = F(1, −63/8).   Direttrice: y = −8 − 1/8 = −65/8.",hi:"Il fuoco è sempre 'dentro' la concavità; la direttrice è dalla parte opposta rispetto al vertice."},
+      {ti:"Intersezioni con l'asse x (radici)",tx:"x = (−b ± √Δ)/(2a) = (4 ± 8)/4   →   x = 3 oppure x = −1.   Punti: (−1, 0) e (3, 0).",hi:"Δ > 0 → due radici reali distinte → la parabola taglia l'asse x in due punti."},
+      {ti:"Intersezione con l'asse y",tx:"Per x = 0: y = c = −6.   Punto: (0, −6).",hi:"L'intercetta sull'asse y è sempre uguale al termine noto c."}
+    ]},
+  {id:13,title:"Intersezione retta–parabola",cat:"La Parabola",diff:2,
+    stmt:"Trova le intersezioni tra la retta y = 2x e la parabola y = x² − 2x.",
+    hyp:"Retta r: y = 2x;   parabola P: y = x² − 2x",tesi:"Due intersezioni: (0, 0) e (4, 8)",
+    idea:"💡 Imposta il sistema retta–parabola, sostituisci e risolvi un'equazione di 2° grado: il numero di soluzioni dipende dal segno del Δ.",
+    steps:[
+      {ti:"Imposta il sistema",tx:"Imponi y_retta = y_parabola:   2x = x² − 2x",hi:"Il sistema {y=2x; y=x²−2x} si riduce a una sola equazione in x."},
+      {ti:"Equazione di 2° grado",tx:"x² − 2x − 2x = 0  →  x² − 4x = 0  →  x(x − 4) = 0",hi:"Quando manca il termine noto, raccogli x: è il modo più rapido."},
+      {ti:"Soluzioni in x",tx:"x = 0  oppure  x = 4   (Δ > 0: due intersezioni distinte)",hi:"Δ = b² − 4ac = 16 > 0 conferma le due soluzioni reali."},
+      {ti:"Calcola le ordinate",tx:"Per x = 0: y = 2·0 = 0.   Per x = 4: y = 2·4 = 8.",hi:"Sostituisci nell'equazione più semplice (la retta) per non sbagliare."},
+      {ti:"Punti di intersezione",tx:"Le intersezioni sono (0, 0) e (4, 8) ✓",hi:"In generale: Δ>0 → 2 punti; Δ=0 → tangenza; Δ<0 → nessuna intersezione."}
+    ]},
+  {id:14,title:"Condizione di tangenza retta–parabola",cat:"La Parabola",diff:3,
+    stmt:"Determina k affinché la retta y = 2x + k sia tangente alla parabola y = x² + 2.",
+    hyp:"Retta r: y = 2x + k;   parabola P: y = x² + 2",tesi:"k = 1; punto di tangenza T(1, 3)",
+    idea:"💡 Tangenza ⟺ il sistema retta–parabola ha una sola soluzione (doppia) ⟺ il discriminante dell'equazione risolvente è zero.",
+    steps:[
+      {ti:"Imposta il sistema",tx:"Uguaglia le due espressioni:   2x + k = x² + 2",hi:"Stesso schema dell'intersezione, ma con k come parametro incognito."},
+      {ti:"Equazione risolvente",tx:"Riordina: x² − 2x + (2 − k) = 0",hi:"Identifica i coefficienti: A = 1, B = −2, C = 2 − k."},
+      {ti:"Imponi Δ = 0",tx:"Δ = (−2)² − 4·1·(2 − k) = 4 − 8 + 4k = 4k − 4   →   4k − 4 = 0   →   k = 1",hi:"Δ = 0 è la condizione algebrica della tangenza."},
+      {ti:"Trova il punto di tangenza",tx:"Con k = 1: x² − 2x + 1 = 0 → (x − 1)² = 0 → x = 1 (radice doppia).",hi:"Una soluzione doppia significa: i due punti di intersezione 'collassano' in uno solo."},
+      {ti:"Coordinate del punto T",tx:"y = 2·1 + 1 = 3   →   T(1, 3) ✓",hi:"Verifica: T deve appartenere a entrambe le curve. 1² + 2 = 3 ✓"}
+    ]},
+  {id:15,title:"Parabola passante per tre punti",cat:"La Parabola",diff:3,
+    stmt:"Trova la parabola con asse parallelo all'asse y passante per A(0, 3), B(1, 0), C(−1, 8).",
+    hyp:"A(0, 3), B(1, 0), C(−1, 8)",tesi:"y = x² − 4x + 3",
+    idea:"💡 Sostituisci ogni punto in y = ax² + bx + c per ottenere un sistema di 3 equazioni nelle 3 incognite a, b, c.",
+    steps:[
+      {ti:"Sostituisci A(0, 3)",tx:"3 = a·0² + b·0 + c   →   c = 3",hi:"I punti sull'asse y danno direttamente il valore di c (spesso il punto più 'comodo')."},
+      {ti:"Sostituisci B(1, 0)",tx:"0 = a·1² + b·1 + 3   →   a + b = −3",hi:"Riduci subito il sistema usando c già noto."},
+      {ti:"Sostituisci C(−1, 8)",tx:"8 = a·(−1)² + b·(−1) + 3   →   a − b = 5",hi:"Attento al segno di b·(−1) = −b."},
+      {ti:"Risolvi il sistema 2×2",tx:"Sommando le due equazioni:  2a = 2  →  a = 1.  Sostituendo: b = −3 − 1 = −4.",hi:"Il metodo di addizione/sottrazione è il più rapido quando i coefficienti sono opposti."},
+      {ti:"Equazione finale",tx:"y = x² − 4x + 3 ✓",hi:"Verifica: B(1,0) → 1 − 4 + 3 = 0 ✓.   C(−1,8) → 1 + 4 + 3 = 8 ✓."}
+    ]},
+  {id:16,title:"Tangente e normale alla parabola",cat:"La Parabola",diff:3,
+    stmt:"Sapendo che y = 2x + 1 è tangente a y = x² + 2 nel punto T(1, 3), trova l'equazione della retta normale alla parabola in T.",
+    hyp:"Tangente: y = 2x + 1; punto di tangenza T(1, 3)",tesi:"Normale: y = −x/2 + 7/2",
+    idea:"💡 La normale è la retta perpendicolare alla tangente nel punto di tangenza: m_n · m_t = −1.",
+    steps:[
+      {ti:"Pendenza della tangente",tx:"La tangente è y = 2x + 1   →   m_t = 2",hi:"Si legge direttamente dal coefficiente di x in forma esplicita."},
+      {ti:"Pendenza della normale",tx:"m_n · m_t = −1   →   m_n = −1/m_t = −1/2",hi:"Stessa regola delle rette perpendicolari (Carta n.8)."},
+      {ti:"Equazione della normale per T(1, 3)",tx:"y − 3 = −1/2 (x − 1)",hi:"Forma punto-pendenza con T e m_n."},
+      {ti:"Sviluppa",tx:"y = −x/2 + 1/2 + 3 = −x/2 + 7/2",hi:"1/2 + 3 = 1/2 + 6/2 = 7/2."},
+      {ti:"Verifica del passaggio per T",tx:"T(1, 3):  y = −1/2 + 7/2 = 6/2 = 3 ✓",hi:"La verifica per T dovrebbe essere automatica per costruzione."}
+    ]},
+];
+
+const CATS=["Tutti","Piano Cartesiano","La Retta","La Parabola"];
+const CC={
+  "Piano Cartesiano":{bg:"#fff7ed",brd:"#fed7aa",acc:"#ea580c",icon:"📍"},
+  "La Retta":         {bg:"#eff6ff",brd:"#bfdbfe",acc:"#2563eb",icon:"📏"},
+  "La Parabola":      {bg:"#f5f3ff",brd:"#ddd6fe",acc:"#7c3aed",icon:"⤴️"},
+};
+const DL=["","★ Base","★★ Intermedio","★★★ Avanzato"];
+const DC=["","#16a34a","#d97706","#dc2626"];
+
+/* ── MAIN COMPONENT ──────────────────────────────────── */
+export default function App(){
+  const [view,setView]=useState("list");
+  const [selId,setSelId]=useState(null);
+  const [step,setStep]=useState(0);
+  const [hint,setHint]=useState(false);
+  const [done,setDone]=useState(new Set());
+  const [filter,setFilter]=useState("Tutti");
+  const [phase,setPhase]=useState("enunciato");
+
+  const card=CARDS.find(c=>c.id===selId);
+  const filtered=filter==="Tutti"?CARDS:CARDS.filter(c=>c.cat===filter);
+  const pct=Math.round(done.size/CARDS.length*100);
+
+  const open=(id)=>{setSelId(id);setStep(0);setHint(false);setPhase("enunciato");setView("detail");};
+  const next=()=>{
+    if(!card)return;
+    if(phase==="enunciato"){setPhase("steps");setStep(0);setHint(false);return;}
+    if(step<card.steps.length-1){setStep(s=>s+1);setHint(false);}
+    else{setPhase("done");setDone(p=>new Set([...p,card.id]));}
+  };
+  const prev=()=>{
+    if(phase==="steps"&&step>0){setStep(s=>s-1);setHint(false);}
+    else if(phase==="steps"&&step===0){setPhase("enunciato");setHint(false);}
+    else if(phase==="done"){setPhase("steps");setStep(card.steps.length-1);setHint(false);}
+  };
+
+  const FigComp=card?FIGS[card.id]:null;
+
+  if(view==="list") return(
+    <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');*{box-sizing:border-box}.cb{transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}.cb:hover{transform:translateY(-2px)}.fb{cursor:pointer;border:2px solid #d1d5db;background:white;border-radius:20px;padding:6px 14px;font-family:Georgia,serif;font-size:13px;color:#374151;transition:all .15s;white-space:nowrap}.fb.act{background:#1e293b;color:white;border-color:#1e293b}.fb:hover:not(.act){background:#f1f5f9}`}</style>
+      <div style={{background:"#1e293b",color:"white",padding:"28px 20px 20px",textAlign:"center"}}>
+        <div style={{fontSize:12,letterSpacing:4,textTransform:"uppercase",color:"#94a3b8",marginBottom:6,fontFamily:"'Lora',Georgia,serif"}}>Geometria Analitica</div>
+        <h1 style={{margin:0,fontSize:"clamp(20px,5vw,32px)",fontFamily:"'Playfair Display',Georgia,serif",fontWeight:700}}>Punti, Rette, Parabole</h1>
+        <p style={{margin:"8px 0 0",color:"#94a3b8",fontSize:13,fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>Schede interattive con figure dinamiche</p>
+        <div style={{maxWidth:340,margin:"16px auto 0",background:"rgba(255,255,255,0.08)",borderRadius:20,padding:"10px 16px",display:"flex",alignItems:"center",gap:12}}>
+          <div style={{flex:1,height:7,background:"rgba(255,255,255,0.15)",borderRadius:4,overflow:"hidden"}}>
+            <div style={{width:`${pct}%`,height:"100%",background:"#fbbf24",borderRadius:4,transition:"width .5s"}}/>
+          </div>
+          <span style={{fontSize:13,color:"#fde68a",whiteSpace:"nowrap"}}>{done.size}/{CARDS.length}</span>
+        </div>
+      </div>
+      <div style={{padding:"14px 14px 6px",display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none"}}>
+        {CATS.map(c=><button key={c} className={`fb ${filter===c?"act":""}`} onClick={()=>setFilter(c)}>{c!=="Tutti"&&CC[c]?CC[c].icon+" ":""}{c}</button>)}
+      </div>
+      <div style={{padding:"6px 12px 32px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10,maxWidth:960,margin:"0 auto"}}>
+        {filtered.map(c=>{
+          const cc=CC[c.cat],isDone=done.has(c.id);
+          return <button key={c.id} className="cb" onClick={()=>open(c.id)}>
+            <div style={{background:cc.bg,border:`2px solid ${isDone?"#fbbf24":cc.brd}`,borderRadius:16,padding:"14px 16px",position:"relative",boxShadow:isDone?"0 0 0 3px rgba(251,191,36,0.22)":"none"}}>
+              {isDone&&<span style={{position:"absolute",top:10,right:12,fontSize:15}}>✅</span>}
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}><span style={{fontSize:20}}>{cc.icon}</span><span style={{fontSize:11,color:cc.acc,fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>{c.cat}</span></div>
+              <div style={{fontSize:11,color:"#94a3b8",marginBottom:3}}>Scheda {c.id}</div>
+              <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontWeight:600,fontSize:14,color:"#1e293b",lineHeight:1.4,marginBottom:6}}>{c.title}</div>
+              <div style={{fontSize:11,color:DC[c.diff]}}>{DL[c.diff]}</div>
+            </div>
+          </button>;
+        })}
+      </div>
+    </div>
+  );
+
+  if(!card)return null;
+  const cc=CC[card.cat];
+  const totalP=card.steps.length+2;
+  const progV=phase==="enunciato"?1:phase==="done"?totalP:step+2;
+  const cur=card.steps[step];
+
+  return(
+    <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');*{box-sizing:border-box}.nb{cursor:pointer;border:none;background:none;padding:8px;border-radius:50%;transition:background .15s;display:flex;align-items:center;justify-content:center}.nb:hover{background:rgba(0,0,0,0.07)}.mb{cursor:pointer;border:none;border-radius:13px;padding:13px 22px;font-family:Georgia,serif;font-size:15px;font-weight:600;transition:all .15s}.mb:hover{filter:brightness(1.08);transform:translateY(-1px)}.ht{cursor:pointer;border:none;background:rgba(251,191,36,0.15);border-radius:10px;padding:8px 14px;font-family:Georgia,serif;font-size:13px;color:#92400e;transition:all .15s}.ht:hover{background:rgba(251,191,36,0.28)}`}</style>
+      <div style={{background:"#1e293b",padding:"11px 14px",display:"flex",alignItems:"center",gap:10}}>
+        <button className="nb" onClick={()=>setView("list")} style={{color:"white"}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
+        </button>
+        <div style={{flex:1}}>
+          <div style={{fontSize:11,color:"#94a3b8",fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>{card.cat} · Scheda {card.id}</div>
+          <div style={{fontSize:14,color:"white",fontFamily:"'Playfair Display',Georgia,serif",fontWeight:600,lineHeight:1.3}}>{card.title}</div>
+        </div>
+        {done.has(card.id)&&<span style={{fontSize:17}}>✅</span>}
+      </div>
+      <div style={{height:4,background:"#e2e8f0"}}><div style={{height:"100%",background:cc.acc,width:`${(progV/totalP)*100}%`,transition:"width .4s ease"}}/></div>
+
+      <div style={{maxWidth:640,margin:"0 auto",padding:"0 12px 80px"}}>
+        {phase==="enunciato"&&(
+          <div style={{paddingTop:18}}>
+            {FigComp&&<div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"12px",marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <FigComp step={-1} phase="enunciato"/>
+            </div>}
+            <div style={{background:cc.bg,border:`2px solid ${cc.brd}`,borderRadius:18,padding:"18px",marginBottom:10}}>
+              <div style={{fontSize:11,color:cc.acc,textTransform:"uppercase",letterSpacing:2,marginBottom:8,fontFamily:"'Lora',Georgia,serif"}}>Enunciato</div>
+              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:15,lineHeight:1.75,color:"#1e293b",fontStyle:"italic"}}>{card.stmt}</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div style={{background:"white",border:"1.5px solid #e2e8f0",borderRadius:13,padding:"13px"}}>
+                <div style={{fontSize:10,color:"#64748b",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'Lora',Georgia,serif"}}>Dati / Ipotesi</div>
+                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151",fontFamily:"'Lora',Georgia,serif"}}>{card.hyp}</p>
+              </div>
+              <div style={{background:"white",border:"1.5px solid #e2e8f0",borderRadius:13,padding:"13px"}}>
+                <div style={{fontSize:10,color:"#64748b",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'Lora',Georgia,serif"}}>Obiettivo / Tesi</div>
+                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151",fontFamily:"'Lora',Georgia,serif",fontWeight:600}}>{card.tesi}</p>
+              </div>
+            </div>
+            <div style={{background:"#fefce8",border:"1.5px solid #fde68a",borderRadius:13,padding:"13px 15px",marginBottom:16}}>
+              <p style={{margin:0,fontSize:14,fontFamily:"'Lora',Georgia,serif",color:"#78350f",lineHeight:1.6}}>{card.idea}</p>
+            </div>
+            <button className="mb" onClick={next} style={{width:"100%",background:cc.acc,color:"white",textAlign:"center",fontSize:16}}>Inizia il procedimento →</button>
+          </div>
+        )}
+
+        {phase==="steps"&&cur&&(
+          <div style={{paddingTop:16}}>
+            {FigComp&&<div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"10px",marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <FigComp step={step} phase="steps"/>
+            </div>}
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
+              {card.steps.map((_,i)=><div key={i} style={{height:5,flex:1,borderRadius:3,background:i<=step?cc.acc:"#e2e8f0",opacity:i<step?0.45:1,transition:"all .3s"}}/>)}
+              <span style={{fontSize:12,color:"#64748b",whiteSpace:"nowrap",fontFamily:"'Lora',Georgia,serif"}}>{step+1}/{card.steps.length}</span>
+            </div>
+            <div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"20px 18px",marginBottom:10,boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                <div style={{width:30,height:30,borderRadius:"50%",background:cc.acc,color:"white",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,flexShrink:0}}>{step+1}</div>
+                <h3 style={{margin:0,fontFamily:"'Playfair Display',Georgia,serif",fontSize:16,color:"#1e293b",fontWeight:600,lineHeight:1.3}}>{cur.ti}</h3>
+              </div>
+              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:14,lineHeight:1.8,color:"#374151"}}>{cur.tx}</p>
+            </div>
+            <div style={{marginBottom:14}}>
+              <button className="ht" onClick={()=>setHint(h=>!h)}>💡 {hint?"Nascondi":"Mostra"} suggerimento</button>
+              {hint&&<div style={{background:"#fefce8",border:"1.5px solid #fde68a",borderRadius:11,padding:"11px 14px",marginTop:7}}>
+                <p style={{margin:0,fontSize:13,fontFamily:"'Lora',Georgia,serif",color:"#78350f",lineHeight:1.65}}>{cur.hi}</p>
+              </div>}
+            </div>
+            <div style={{display:"flex",gap:9}}>
+              <button className="mb" onClick={prev} style={{flex:1,background:"#f1f5f9",color:"#374151",textAlign:"center"}}>← Indietro</button>
+              <button className="mb" onClick={next} style={{flex:2,background:cc.acc,color:"white",textAlign:"center"}}>{step<card.steps.length-1?"Passo successivo →":"Concludi ✓"}</button>
+            </div>
+          </div>
+        )}
+
+        {phase==="done"&&(
+          <div style={{paddingTop:36,textAlign:"center"}}>
+            <div style={{fontSize:60,marginBottom:14}}>🎉</div>
+            <h2 style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:24,color:"#1e293b",marginBottom:6}}>Scheda completata!</h2>
+            <p style={{fontFamily:"'Lora',Georgia,serif",fontSize:15,color:cc.acc,fontWeight:600,marginBottom:20}}>{card.title}</p>
+            <div style={{background:cc.bg,border:`2px solid ${cc.brd}`,borderRadius:15,padding:"14px 18px",marginBottom:18,textAlign:"left"}}>
+              <div style={{fontSize:10,color:cc.acc,marginBottom:6,textTransform:"uppercase",letterSpacing:2,fontFamily:"'Lora',Georgia,serif"}}>Risultato:</div>
+              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:14,fontStyle:"italic",color:"#1e293b",lineHeight:1.7}}>{card.tesi}</p>
+            </div>
+            <div style={{background:"#fef9c3",border:"2px solid #fde68a",borderRadius:13,padding:"12px 16px",marginBottom:20}}>
+              <p style={{margin:0,fontSize:14,fontFamily:"'Lora',Georgia,serif",color:"#78350f"}}>✅ Schede completate: <strong>{done.size}</strong> / {CARDS.length} ({pct}%)</p>
+            </div>
+            <div style={{display:"flex",gap:9}}>
+              <button className="mb" onClick={()=>{setPhase("enunciato");setStep(0);setHint(false);}} style={{flex:1,background:"#f1f5f9",color:"#374151"}}>🔄 Rivedi</button>
+              <button className="mb" onClick={()=>setView("list")} style={{flex:1,background:cc.acc,color:"white"}}>📚 Torna all'indice</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
