@@ -772,25 +772,24 @@ const QUIZZES=[
 /* ── MAIN COMPONENT ──────────────────────────────────── */
 export default function App(){
   const [view,setView]=useState("list");
-  const [mode,setMode]=useState("schede");
+  const [navSection,setNavSection]=useState("home");
   const [selId,setSelId]=useState(null);
   const [step,setStep]=useState(0);
   const [hint,setHint]=useState(false);
   const [done,setDone]=useState(new Set());
-  const [filter,setFilter]=useState("Tutti");
   const [phase,setPhase]=useState("enunciato");
-  const [qFilter,setQFilter]=useState("Tutti");
   const [selQid,setSelQid]=useState(null);
   const [qAnswers,setQAnswers]=useState({});
 
   const card=CARDS.find(c=>c.id===selId);
   const quiz=QUIZZES.find(q=>q.id===selQid);
-  const filtered=filter==="Tutti"?CARDS:CARDS.filter(c=>c.cat===filter);
-  const qFiltered=qFilter==="Tutti"?QUIZZES:QUIZZES.filter(q=>q.cat===qFilter);
+  const sectionCards=navSection==="home"||navSection==="quiz"?CARDS:CARDS.filter(c=>c.cat===navSection);
+  const sectionQuizzes=navSection==="home"||navSection==="quiz"?QUIZZES:QUIZZES.filter(q=>q.cat===navSection);
   const pct=Math.round(done.size/CARDS.length*100);
   const qCorrect=QUIZZES.filter(q=>qAnswers[q.id]===q.ans).length;
 
-  const open=(id)=>{setSelId(id);setStep(0);setHint(false);setPhase("enunciato");setView("detail");};
+  const openCard=(id)=>{setSelId(id);setStep(0);setHint(false);setPhase("enunciato");setView("detail");};
+  const goNav=(sec)=>{setNavSection(sec);setView("list");};
   const next=()=>{
     if(!card)return;
     if(phase==="enunciato"){setPhase("steps");setStep(0);setHint(false);return;}
@@ -803,9 +802,67 @@ export default function App(){
     else if(phase==="done"){setPhase("steps");setStep(card.steps.length-1);setHint(false);}
   };
   const answer=(qid,idx)=>{if(qAnswers[qid]===undefined)setQAnswers(p=>({...p,[qid]:idx}));};
-
   const FigComp=card?FIGS[card.id]:null;
-  const GF=`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');*{box-sizing:border-box}`;
+
+  const NAV=[
+    {key:"home",   label:"Home",          icon:"🏠"},
+    {key:"Piano Cartesiano", label:"Piano Cart.", icon:"📍"},
+    {key:"La Retta",         label:"La Retta",   icon:"📏"},
+    {key:"La Parabola",      label:"La Parabola",icon:"⤴️"},
+    {key:"quiz",   label:"Quiz",          icon:"🧠"},
+  ];
+  const SEC_DESC={
+    "Piano Cartesiano":"Distanza tra punti, punto medio, perimetro e riconoscimento di figure.",
+    "La Retta":"Equazioni, pendenza, rette parallele e perpendicolari, distanza punto-retta.",
+    "La Parabola":"Vertice, asse di simmetria, intersezioni, tangenza e parabola per tre punti.",
+  };
+
+  const isNavActive=(key)=>navSection===key&&view==="list";
+  const SF=`font-family:system-ui,-apple-system,sans-serif`;
+  const BASE_STYLE=`*{box-sizing:border-box}body{margin:0}
+    .btn-nav{border:none;background:transparent;cursor:pointer;transition:all .15s;font-family:system-ui,sans-serif}
+    .btn-nav:hover{background:rgba(255,255,255,.18)!important}
+    .card-hover{transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+    .card-hover:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.12)!important}
+    .opt-btn{cursor:pointer;transition:all .2s;text-align:left;font-family:system-ui,sans-serif}
+    .opt-btn:hover:not(:disabled){filter:brightness(.96)}
+    .action-btn{cursor:pointer;border:none;font-family:system-ui,sans-serif;font-weight:600;transition:all .15s}
+    .action-btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+    .hint-btn{cursor:pointer;border:none;background:#fef9c3;border-radius:8px;padding:7px 14px;font-family:system-ui,sans-serif;font-size:13px;color:#854d0e;transition:background .15s}
+    .hint-btn:hover{background:#fef08a}`;
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  const Header=({back,backLabel,title,subtitle})=>(
+    <div style={{background:"#2563eb",color:"white"}}>
+      <div style={{padding:"14px 16px 0",maxWidth:960,margin:"0 auto",display:"flex",alignItems:"center",gap:10}}>
+        {back&&<button onClick={back} style={{border:"none",background:"rgba(255,255,255,.15)",color:"white",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"system-ui,sans-serif",fontSize:13,display:"flex",alignItems:"center",gap:5}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>{backLabel}
+        </button>}
+        <div style={{flex:1}}>
+          <h1 style={{margin:0,fontSize:back?"16px":"clamp(17px,3.5vw,24px)",fontWeight:700,fontFamily:"system-ui,sans-serif",lineHeight:1.2}}>
+            {title||"📐 Piano Cartesiano"}
+          </h1>
+          {subtitle&&<p style={{margin:"2px 0 0",fontSize:12,opacity:.8,fontFamily:"system-ui,sans-serif"}}>{subtitle}</p>}
+          {!back&&<p style={{margin:"2px 0 0",fontSize:12,opacity:.8,fontFamily:"system-ui,sans-serif"}}>Geometria analitica · schede, figure & quiz</p>}
+        </div>
+        {!back&&<div style={{textAlign:"right",fontSize:12,opacity:.9,lineHeight:1.7}}>
+          <div>📚 {done.size}/{CARDS.length}</div>
+          <div>🧠 {qCorrect}/{QUIZZES.length}</div>
+        </div>}
+      </div>
+      <nav style={{maxWidth:960,margin:"0 auto",padding:"10px 12px 0",display:"flex",gap:2,overflowX:"auto",scrollbarWidth:"none"}}>
+        {NAV.map(({key,label,icon})=>(
+          <button key={key} className="btn-nav" onClick={()=>goNav(key)}
+            style={{background:isNavActive(key)?"rgba(255,255,255,.2)":"transparent",
+              color:"white",padding:"7px 13px",borderRadius:"8px 8px 0 0",whiteSpace:"nowrap",
+              fontSize:13,fontWeight:isNavActive(key)?700:400,
+              borderBottom:isNavActive(key)?"3px solid white":"3px solid transparent"}}>
+            {icon} {label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
 
   /* ── QUIZ DETAIL ─────────────────────────────────────── */
   if(view==="quiz"&&quiz){
@@ -813,85 +870,83 @@ export default function App(){
     const chosen=qAnswers[quiz.id];
     const answered=chosen!==undefined;
     const correct=chosen===quiz.ans;
-    const qList=qFilter==="Tutti"?QUIZZES:QUIZZES.filter(q=>q.cat===quiz.cat);
+    const qList=navSection==="quiz"||navSection==="home"?QUIZZES:QUIZZES.filter(q=>q.cat===quiz.cat);
     const qIdx=qList.findIndex(q=>q.id===quiz.id);
     const nextQ=qList[qIdx+1];
     const prevQ=qList[qIdx-1];
     return(
-      <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
-        <style>{GF+`.nb{cursor:pointer;border:none;background:none;padding:8px;border-radius:50%;transition:background .15s;display:flex;align-items:center;justify-content:center}.nb:hover{background:rgba(0,0,0,0.07)}.mb{cursor:pointer;border:none;border-radius:13px;padding:13px 22px;font-family:Georgia,serif;font-size:15px;font-weight:600;transition:all .15s}.mb:hover{filter:brightness(1.08);transform:translateY(-1px)}`}</style>
-        <div style={{background:"#1e293b",padding:"11px 14px",display:"flex",alignItems:"center",gap:10}}>
-          <button className="nb" onClick={()=>setView("list")} style={{color:"white"}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
-          </button>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,color:"#94a3b8",fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>{quiz.cat} · {quiz.type==="T"?"Teorico":"Numerico"}</div>
-            <div style={{fontSize:13,color:"white",fontFamily:"'Playfair Display',Georgia,serif",fontWeight:600}}>Domanda {qIdx+1} di {qList.length}</div>
-          </div>
-          <div style={{display:"flex",gap:3}}>
-            {qList.map(q=>{
+      <div style={{minHeight:"100vh",background:"#f0f4f8",fontFamily:"system-ui,sans-serif"}}>
+        <style>{BASE_STYLE}</style>
+        <Header back={()=>{setNavSection("quiz");setView("list");}} backLabel="Quiz"
+          title={`${quiz.cat} · ${quiz.type==="T"?"Teorico":"Numerico"}`}
+          subtitle={`Domanda ${qIdx+1} di ${qList.length}`}/>
+        <div style={{maxWidth:680,margin:"0 auto",padding:"20px 14px 80px"}}>
+          <div style={{display:"flex",gap:3,marginBottom:18,flexWrap:"wrap"}}>
+            {qList.map((q,i)=>{
               const a=qAnswers[q.id];
-              return <div key={q.id} style={{width:8,height:8,borderRadius:"50%",background:a===undefined?(q.id===quiz.id?"white":"rgba(255,255,255,0.25)"):a===q.ans?"#4ade80":"#f87171",transition:"all .3s"}}/>;
+              return <div key={q.id} title={`Dom. ${i+1}`}
+                style={{width:10,height:10,borderRadius:"50%",
+                  background:q.id===quiz.id?"#2563eb":a===undefined?"#cbd5e1":a===q.ans?"#16a34a":"#dc2626",
+                  border:q.id===quiz.id?"2px solid #1d4ed8":"none",transition:"all .3s"}}/>;
             })}
           </div>
-        </div>
-        <div style={{maxWidth:640,margin:"0 auto",padding:"20px 14px 80px"}}>
-          <div style={{background:cc.bg,border:`2px solid ${cc.brd}`,borderRadius:18,padding:"20px",marginBottom:14}}>
+          <div style={{background:"white",borderRadius:12,padding:"20px",marginBottom:14,
+            borderLeft:`4px solid ${cc.acc}`,boxShadow:"0 1px 6px rgba(0,0,0,.07)"}}>
             <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center"}}>
-              <span style={{background:quiz.type==="T"?"#dbeafe":"#dcfce7",color:quiz.type==="T"?"#1d4ed8":"#15803d",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,fontFamily:"'Lora',Georgia,serif",letterSpacing:1}}>
+              <span style={{background:quiz.type==="T"?"#dbeafe":"#dcfce7",color:quiz.type==="T"?"#1d4ed8":"#15803d",
+                fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,letterSpacing:.5}}>
                 {quiz.type==="T"?"TEORICO":"NUMERICO"}
               </span>
-              <span style={{fontSize:11,color:cc.acc,fontFamily:"'Lora',Georgia,serif"}}>{cc.icon} {quiz.cat}</span>
+              <span style={{fontSize:12,color:"#6b7280"}}>{cc.icon} {quiz.cat}</span>
             </div>
-            <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:16,lineHeight:1.75,color:"#1e293b",fontWeight:500}}>{quiz.q}</p>
+            <p style={{margin:0,fontSize:16,lineHeight:1.7,color:"#1f2937",fontWeight:500}}>{quiz.q}</p>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:16}}>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             {quiz.opts.map((opt,i)=>{
-              const isChosen=chosen===i;
-              const isCorrect=i===quiz.ans;
-              let bg="white",brd="#e2e8f0",clr="#374151";
+              const isChosen=chosen===i,isCorrect=i===quiz.ans;
+              let bg="white",brd="#e5e7eb",clr="#374151",lclr="#6b7280";
               if(answered){
-                if(isCorrect){bg="#dcfce7";brd="#4ade80";clr="#15803d";}
-                else if(isChosen){bg="#fee2e2";brd="#f87171";clr="#b91c1c";}
+                if(isCorrect){bg="#f0fdf4";brd="#86efac";clr="#15803d";lclr="#15803d";}
+                else if(isChosen){bg="#fef2f2";brd="#fca5a5";clr="#b91c1c";lclr="#b91c1c";}
               }
               return(
-                <button key={i} onClick={()=>answer(quiz.id,i)}
-                  style={{background:bg,border:`2px solid ${brd}`,borderRadius:14,padding:"13px 16px",
-                    textAlign:"left",cursor:answered?"default":"pointer",fontFamily:"'Lora',Georgia,serif",
-                    fontSize:14,color:clr,lineHeight:1.5,transition:"all .25s",display:"flex",alignItems:"flex-start",gap:10}}>
-                  <span style={{fontWeight:700,minWidth:22,color:answered&&isCorrect?"#15803d":answered&&isChosen?"#b91c1c":cc.acc}}>
-                    {["A","B","C","D"][i]}.
-                  </span>
+                <button key={i} className="opt-btn" disabled={answered} onClick={()=>answer(quiz.id,i)}
+                  style={{background:bg,border:`2px solid ${brd}`,borderRadius:10,padding:"12px 16px",
+                    color:clr,fontSize:14,lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:10}}>
+                  <span style={{fontWeight:700,minWidth:22,color:lclr}}>{["A","B","C","D"][i]}.</span>
                   <span style={{flex:1}}>{opt}</span>
-                  {answered&&isCorrect&&<span style={{marginLeft:"auto",fontSize:16}}>✅</span>}
-                  {answered&&isChosen&&!isCorrect&&<span style={{marginLeft:"auto",fontSize:16}}>❌</span>}
+                  {answered&&isCorrect&&<span>✅</span>}
+                  {answered&&isChosen&&!isCorrect&&<span>❌</span>}
                 </button>
               );
             })}
           </div>
-          {answered&&(
-            <div style={{background:correct?"#f0fdf4":"#fff7ed",border:`2px solid ${correct?"#86efac":"#fed7aa"}`,borderRadius:14,padding:"16px 18px",marginBottom:16}}>
-              <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:correct?"#15803d":"#c2410c",fontFamily:"'Playfair Display',Georgia,serif"}}>
+          {answered?(
+            <div style={{background:correct?"#f0fdf4":"#fff7ed",border:`1px solid ${correct?"#86efac":"#fed7aa"}`,
+              borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:correct?"#15803d":"#c2410c"}}>
                 {correct?"✅ Risposta corretta!":"❌ Risposta errata"}
               </div>
-              {!correct&&<p style={{margin:"0 0 8px",fontSize:13,fontFamily:"'Lora',Georgia,serif",color:"#b91c1c",lineHeight:1.65}}>
+              {!correct&&<p style={{margin:"0 0 8px",fontSize:13,color:"#b91c1c",lineHeight:1.6}}>
                 <strong>Errore:</strong> {quiz.wr[chosen]}
               </p>}
-              <p style={{margin:0,fontSize:13,fontFamily:"'Lora',Georgia,serif",color:"#1e293b",lineHeight:1.65}}>
-                <strong>{correct?"Perché è corretta:":"Risposta corretta ({['A','B','C','D'][quiz.ans]}):"}</strong> {quiz.why}
+              <p style={{margin:0,fontSize:13,color:"#1f2937",lineHeight:1.6}}>
+                <strong>Risposta corretta ({["A","B","C","D"][quiz.ans]}):</strong> {quiz.why}
               </p>
             </div>
+          ):(
+            <p style={{textAlign:"center",color:"#9ca3af",fontSize:13,fontStyle:"italic",marginBottom:14}}>
+              Seleziona una risposta per vedere il feedback immediato
+            </p>
           )}
-          {!answered&&(
-            <p style={{textAlign:"center",color:"#94a3b8",fontSize:13,fontFamily:"'Lora',Georgia,serif",fontStyle:"italic",marginBottom:16}}>Seleziona una risposta per vedere il feedback</p>
-          )}
-          <div style={{display:"flex",gap:9}}>
-            {prevQ&&<button className="mb" onClick={()=>setSelQid(prevQ.id)} style={{flex:1,background:"#f1f5f9",color:"#374151",textAlign:"center"}}>← Precedente</button>}
-            {nextQ?<button className="mb" onClick={()=>setSelQid(nextQ.id)} disabled={!answered}
-              style={{flex:2,background:answered?cc.acc:"#e2e8f0",color:answered?"white":"#94a3b8",textAlign:"center",cursor:answered?"pointer":"default"}}>
-              Prossima →</button>
-            :<button className="mb" onClick={()=>setView("list")}
-              style={{flex:2,background:cc.acc,color:"white",textAlign:"center"}}>📚 Torna ai quiz</button>}
+          <div style={{display:"flex",gap:8}}>
+            {prevQ&&<button className="action-btn" onClick={()=>setSelQid(prevQ.id)}
+              style={{flex:1,background:"#f3f4f6",color:"#374151",borderRadius:10,padding:"12px",fontSize:14}}>← Precedente</button>}
+            {nextQ?<button className="action-btn" onClick={()=>setSelQid(nextQ.id)} disabled={!answered}
+              style={{flex:2,background:answered?"#2563eb":"#e5e7eb",color:answered?"white":"#9ca3af",
+                borderRadius:10,padding:"12px",fontSize:14,cursor:answered?"pointer":"default"}}>Prossima →</button>
+            :<button className="action-btn" onClick={()=>{setNavSection("quiz");setView("list");}}
+              style={{flex:2,background:"#2563eb",color:"white",borderRadius:10,padding:"12px",fontSize:14}}>🏠 Torna ai quiz</button>}
           </div>
         </div>
       </div>
@@ -899,99 +954,172 @@ export default function App(){
   }
 
   /* ── LIST VIEW ───────────────────────────────────────── */
-  if(view==="list") return(
-    <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
-      <style>{GF+`.cb{transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}.cb:hover{transform:translateY(-2px)}.fb{cursor:pointer;border:2px solid #d1d5db;background:white;border-radius:20px;padding:6px 14px;font-family:Georgia,serif;font-size:13px;color:#374151;transition:all .15s;white-space:nowrap}.fb.act{background:#1e293b;color:white;border-color:#1e293b}.fb:hover:not(.act){background:#f1f5f9}`}</style>
-      <div style={{background:"#1e293b",color:"white",padding:"28px 20px 20px",textAlign:"center"}}>
-        <div style={{fontSize:12,letterSpacing:4,textTransform:"uppercase",color:"#94a3b8",marginBottom:6,fontFamily:"'Lora',Georgia,serif"}}>Geometria Analitica</div>
-        <h1 style={{margin:0,fontSize:"clamp(20px,5vw,32px)",fontFamily:"'Playfair Display',Georgia,serif",fontWeight:700}}>Punti, Rette, Parabole</h1>
-        <p style={{margin:"8px 0 0",color:"#94a3b8",fontSize:13,fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>Schede interattive con figure dinamiche</p>
-        <div style={{maxWidth:380,margin:"16px auto 0",display:"flex",gap:14,justifyContent:"center"}}>
-          <div style={{textAlign:"center",flex:1}}>
-            <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,fontFamily:"'Lora',Georgia,serif",letterSpacing:1,textTransform:"uppercase"}}>📚 Schede</div>
-            <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{flex:1,height:6,background:"rgba(255,255,255,0.15)",borderRadius:3,overflow:"hidden"}}>
-                <div style={{width:`${pct}%`,height:"100%",background:"#fbbf24",borderRadius:3,transition:"width .5s"}}/>
+  if(view==="list"){
+    const catDone=(cat)=>CARDS.filter(c=>c.cat===cat&&done.has(c.id)).length;
+    const catTotal=(cat)=>CARDS.filter(c=>c.cat===cat).length;
+    const qCatCorrect=(cat)=>QUIZZES.filter(q=>q.cat===cat&&qAnswers[q.id]===q.ans).length;
+    const qCatTotal=(cat)=>QUIZZES.filter(q=>q.cat===cat).length;
+
+    return(
+      <div style={{minHeight:"100vh",background:"#f0f4f8",fontFamily:"system-ui,sans-serif"}}>
+        <style>{BASE_STYLE}</style>
+        <Header/>
+        <div style={{maxWidth:960,margin:"0 auto",padding:"20px 14px 40px"}}>
+
+          {/* HOME */}
+          {navSection==="home"&&(<>
+            <div style={{background:"white",borderRadius:12,padding:"20px 24px",marginBottom:20,
+              boxShadow:"0 1px 4px rgba(0,0,0,.07)"}}>
+              <h2 style={{margin:"0 0 10px",fontSize:18,color:"#1f2937"}}>Cos'è questa app?</h2>
+              <p style={{margin:"0 0 8px",fontSize:14,color:"#374151",lineHeight:1.7}}>
+                Studia la <strong>geometria analitica</strong> con schede interattive passo-passo,
+                figure SVG animate e quiz a risposta multipla con feedback immediato.
+                Ogni sezione contiene esercizi guidati e 10 quiz (teorici + numerici).
+              </p>
+              <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#15803d"}}>
+                💡 <strong>Suggerimento:</strong> studia la scheda, segui i passi guidati, poi mettiti alla prova con i quiz.
+                I tuoi progressi vengono salvati automaticamente nella sessione.
               </div>
-              <span style={{fontSize:12,color:"#fde68a",whiteSpace:"nowrap"}}>{done.size}/{CARDS.length}</span>
             </div>
-          </div>
-          <div style={{textAlign:"center",flex:1}}>
-            <div style={{fontSize:10,color:"#94a3b8",marginBottom:4,fontFamily:"'Lora',Georgia,serif",letterSpacing:1,textTransform:"uppercase"}}>🧠 Quiz</div>
-            <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{flex:1,height:6,background:"rgba(255,255,255,0.15)",borderRadius:3,overflow:"hidden"}}>
-                <div style={{width:`${Math.round(qCorrect/QUIZZES.length*100)}%`,height:"100%",background:"#4ade80",borderRadius:3,transition:"width .5s"}}/>
-              </div>
-              <span style={{fontSize:12,color:"#86efac",whiteSpace:"nowrap"}}>{qCorrect}/{QUIZZES.length}</span>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,marginBottom:24}}>
+              {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+                const cc=CC[cat];
+                const nd=catDone(cat),nt=catTotal(cat);
+                return(
+                  <button key={cat} className="card-hover" onClick={()=>goNav(cat)}
+                    style={{background:"white",border:`1.5px solid #e5e7eb`,borderRadius:12,padding:"18px 16px",
+                      textAlign:"left",boxShadow:"0 1px 4px rgba(0,0,0,.06)",
+                      borderLeft:`4px solid ${cc.acc}`}}>
+                    <div style={{fontSize:28,marginBottom:8}}>{cc.icon}</div>
+                    <div style={{fontSize:15,fontWeight:700,color:cc.acc,marginBottom:4}}>{cat}</div>
+                    <div style={{fontSize:12,color:"#6b7280",lineHeight:1.5,marginBottom:10}}>{SEC_DESC[cat]}</div>
+                    <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>{nd}/{nt} schede · {qCatCorrect(cat)}/{qCatTotal(cat)} quiz</div>
+                    <div style={{height:4,background:"#e5e7eb",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",background:cc.acc,width:`${nt?Math.round(nd/nt*100):0}%`,transition:"width .4s"}}/>
+                    </div>
+                  </button>
+                );
+              })}
+              <button className="card-hover" onClick={()=>goNav("quiz")}
+                style={{background:"white",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"18px 16px",
+                  textAlign:"left",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderLeft:"4px solid #16a34a"}}>
+                <div style={{fontSize:28,marginBottom:8}}>🧠</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#16a34a",marginBottom:4}}>Quiz</div>
+                <div style={{fontSize:12,color:"#6b7280",lineHeight:1.5,marginBottom:10}}>
+                  30 domande teoriche e numeriche con feedback immediato e spiegazione degli errori.
+                </div>
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>{qCorrect}/{QUIZZES.length} corrette</div>
+                <div style={{height:4,background:"#e5e7eb",borderRadius:2,overflow:"hidden"}}>
+                  <div style={{height:"100%",background:"#16a34a",width:`${Math.round(qCorrect/QUIZZES.length*100)}%`,transition:"width .4s"}}/>
+                </div>
+              </button>
             </div>
-          </div>
-        </div>
-      </div>
-      <div style={{background:"white",borderBottom:"2px solid #e2e8f0",display:"flex",justifyContent:"center"}}>
-        {[["schede","📚 Schede"],["quiz","🧠 Quiz"]].map(([m,lbl])=>(
-          <button key={m} onClick={()=>setMode(m)}
-            style={{border:"none",background:"none",padding:"13px 32px",fontFamily:"Georgia,serif",fontSize:14,cursor:"pointer",
-              fontWeight:mode===m?700:400,color:mode===m?"#1e293b":"#64748b",
-              borderBottom:mode===m?"3px solid #1e293b":"3px solid transparent",transition:"all .2s"}}>
-            {lbl}
-          </button>
-        ))}
-      </div>
-      <div style={{padding:"12px 14px 6px",display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none"}}>
-        {CATS.map(c=>{
-          const active=mode==="schede"?filter===c:qFilter===c;
-          return <button key={c} className={`fb ${active?"act":""}`}
-            onClick={()=>mode==="schede"?setFilter(c):setQFilter(c)}>
-            {c!=="Tutti"&&CC[c]?CC[c].icon+" ":""}{c}
-          </button>;
-        })}
-      </div>
-      {mode==="schede"&&(
-        <div style={{padding:"6px 12px 32px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10,maxWidth:960,margin:"0 auto"}}>
-          {filtered.map(c=>{
-            const cc=CC[c.cat],isDone=done.has(c.id);
-            return <button key={c.id} className="cb" onClick={()=>open(c.id)}>
-              <div style={{background:cc.bg,border:`2px solid ${isDone?"#fbbf24":cc.brd}`,borderRadius:16,padding:"14px 16px",position:"relative",boxShadow:isDone?"0 0 0 3px rgba(251,191,36,0.22)":"none"}}>
-                {isDone&&<span style={{position:"absolute",top:10,right:12,fontSize:15}}>✅</span>}
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}><span style={{fontSize:20}}>{cc.icon}</span><span style={{fontSize:11,color:cc.acc,fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>{c.cat}</span></div>
-                <div style={{fontSize:11,color:"#94a3b8",marginBottom:3}}>Scheda {c.id}</div>
-                <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontWeight:600,fontSize:14,color:"#1e293b",lineHeight:1.4,marginBottom:6}}>{c.title}</div>
-                <div style={{fontSize:11,color:DC[c.diff]}}>{DL[c.diff]}</div>
-              </div>
-            </button>;
-          })}
-        </div>
-      )}
-      {mode==="quiz"&&(
-        <div style={{padding:"6px 12px 32px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10,maxWidth:960,margin:"0 auto"}}>
-          {qFiltered.map(q=>{
-            const cc=CC[q.cat];
-            const chosen=qAnswers[q.id];
-            const answered=chosen!==undefined;
-            const correct=chosen===q.ans;
-            return <button key={q.id} className="cb" onClick={()=>{setSelQid(q.id);setView("quiz");}}>
-              <div style={{background:answered?(correct?"#f0fdf4":"#fff7ed"):cc.bg,
-                border:`2px solid ${answered?(correct?"#86efac":"#fed7aa"):cc.brd}`,
-                borderRadius:16,padding:"14px 16px",position:"relative"}}>
-                {answered&&<span style={{position:"absolute",top:10,right:12,fontSize:14}}>{correct?"✅":"❌"}</span>}
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                  <span style={{fontSize:18}}>{cc.icon}</span>
-                  <span style={{background:q.type==="T"?"#dbeafe":"#dcfce7",color:q.type==="T"?"#1d4ed8":"#15803d",
-                    fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,fontFamily:"'Lora',Georgia,serif",letterSpacing:1}}>
-                    {q.type==="T"?"TEORICO":"NUMERICO"}
-                  </span>
+            <h3 style={{margin:"0 0 10px",fontSize:16,color:"#374151"}}>📊 I tuoi progressi</h3>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
+              {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+                const cc=CC[cat],nd=catDone(cat),nt=catTotal(cat);
+                const qc=qCatCorrect(cat),qt=qCatTotal(cat);
+                return(
+                  <div key={cat} style={{background:"white",borderRadius:10,padding:"12px",
+                    boxShadow:"0 1px 3px rgba(0,0,0,.06)",borderTop:`3px solid ${cc.acc}`}}>
+                    <div style={{fontSize:10,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>
+                      {cat.replace("Piano Cartesiano","PIANO CART.").replace("La Retta","LA RETTA").replace("La Parabola","LA PARABOLA")}
+                    </div>
+                    <div style={{fontSize:13,fontWeight:600,color:nd>0?"#1f2937":"#9ca3af",marginBottom:2}}>
+                      {nd===0?"Non svolto":`${nd}/${nt} schede`}
+                    </div>
+                    <div style={{fontSize:12,color:qc>0?"#16a34a":"#9ca3af"}}>{qc}/{qt} quiz</div>
+                  </div>
+                );
+              })}
+              <div style={{background:"white",borderRadius:10,padding:"12px",
+                boxShadow:"0 1px 3px rgba(0,0,0,.06)",borderTop:"3px solid #16a34a"}}>
+                <div style={{fontSize:10,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>QUIZ TOT.</div>
+                <div style={{fontSize:13,fontWeight:600,color:qCorrect>0?"#1f2937":"#9ca3af",marginBottom:2}}>
+                  {qCorrect===0?"Non svolto":`${qCorrect}/${QUIZZES.length}`}
                 </div>
-                <div style={{fontSize:11,color:"#94a3b8",marginBottom:4,fontFamily:"'Lora',Georgia,serif"}}>{q.cat}</div>
-                <div style={{fontFamily:"'Lora',Georgia,serif",fontSize:13,color:"#1e293b",lineHeight:1.5}}>
-                  {q.q.length>85?q.q.slice(0,85)+"…":q.q}
-                </div>
+                <div style={{fontSize:12,color:"#6b7280"}}>{Math.round(qCorrect/QUIZZES.length*100)}% corretto</div>
               </div>
-            </button>;
-          })}
+            </div>
+          </>)}
+
+          {/* SECTION SCHEDE */}
+          {navSection!=="home"&&navSection!=="quiz"&&(<>
+            <div style={{background:"white",borderRadius:12,padding:"14px 18px",marginBottom:16,
+              borderLeft:`4px solid ${CC[navSection].acc}`,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+              <p style={{margin:0,fontSize:14,color:"#374151"}}>{SEC_DESC[navSection]}</p>
+              <div style={{marginTop:8,fontSize:12,color:"#6b7280"}}>
+                {catDone(navSection)}/{catTotal(navSection)} schede completate &nbsp;·&nbsp;
+                {qCatCorrect(navSection)}/{qCatTotal(navSection)} quiz corretti
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
+              {sectionCards.map(c=>{
+                const cc=CC[c.cat],isDone=done.has(c.id);
+                return(
+                  <button key={c.id} className="card-hover" onClick={()=>openCard(c.id)}
+                    style={{background:"white",border:`1.5px solid ${isDone?"#fbbf24":"#e5e7eb"}`,borderRadius:12,
+                      padding:"14px 16px",position:"relative",boxShadow:isDone?"0 0 0 3px rgba(251,191,36,.2)":"0 1px 4px rgba(0,0,0,.05)",
+                      borderLeft:`4px solid ${cc.acc}`}}>
+                    {isDone&&<span style={{position:"absolute",top:10,right:12,fontSize:14}}>✅</span>}
+                    <div style={{fontSize:11,color:"#9ca3af",marginBottom:3}}>Scheda {c.id}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1f2937",lineHeight:1.4,marginBottom:6}}>{c.title}</div>
+                    <div style={{fontSize:11,color:DC[c.diff]}}>{DL[c.diff]}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </>)}
+
+          {/* QUIZ LIST */}
+          {navSection==="quiz"&&(<>
+            <div style={{background:"white",borderRadius:12,padding:"14px 18px",marginBottom:16,
+              borderLeft:"4px solid #16a34a",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+              <p style={{margin:"0 0 4px",fontSize:14,color:"#374151"}}>
+                30 domande a risposta multipla — 10 per sezione, mix teorico e numerico.
+              </p>
+              <div style={{fontSize:12,color:"#6b7280"}}>{qCorrect}/{QUIZZES.length} corrette · {Object.keys(qAnswers).length} tentate</div>
+            </div>
+            {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+              const cc=CC[cat];
+              const catQ=QUIZZES.filter(q=>q.cat===cat);
+              return(
+                <div key={cat} style={{marginBottom:20}}>
+                  <h3 style={{margin:"0 0 10px",fontSize:14,color:cc.acc,display:"flex",alignItems:"center",gap:6}}>
+                    {cc.icon} {cat}
+                    <span style={{fontSize:12,color:"#9ca3af",fontWeight:400}}>
+                      — {qCatCorrect(cat)}/{qCatTotal(cat)} corrette
+                    </span>
+                  </h3>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
+                    {catQ.map(q=>{
+                      const chosen=qAnswers[q.id],answered=chosen!==undefined,correct=chosen===q.ans;
+                      return(
+                        <button key={q.id} className="card-hover" onClick={()=>{setSelQid(q.id);setView("quiz");}}
+                          style={{background:answered?(correct?"#f0fdf4":"#fff7ed"):"white",
+                            border:`1.5px solid ${answered?(correct?"#86efac":"#fed7aa"):"#e5e7eb"}`,
+                            borderRadius:10,padding:"12px 14px",position:"relative",textAlign:"left",
+                            boxShadow:"0 1px 3px rgba(0,0,0,.05)",borderLeft:`3px solid ${cc.acc}`}}>
+                          {answered&&<span style={{position:"absolute",top:8,right:10,fontSize:13}}>{correct?"✅":"❌"}</span>}
+                          <span style={{background:q.type==="T"?"#dbeafe":"#dcfce7",color:q.type==="T"?"#1d4ed8":"#15803d",
+                            fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:20,letterSpacing:.5,marginBottom:6,display:"inline-block"}}>
+                            {q.type==="T"?"TEORICO":"NUMERICO"}
+                          </span>
+                          <p style={{margin:"6px 0 0",fontSize:13,color:"#374151",lineHeight:1.45}}>
+                            {q.q.length>80?q.q.slice(0,80)+"…":q.q}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </>)}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
 
   /* ── CARD DETAIL VIEW ────────────────────────────────── */
   if(!card)return null;
@@ -999,90 +1127,102 @@ export default function App(){
   const totalP=card.steps.length+2;
   const progV=phase==="enunciato"?1:phase==="done"?totalP:step+2;
   const cur=card.steps[step];
-
   return(
-    <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
-      <style>{GF+`.nb{cursor:pointer;border:none;background:none;padding:8px;border-radius:50%;transition:background .15s;display:flex;align-items:center;justify-content:center}.nb:hover{background:rgba(0,0,0,0.07)}.mb{cursor:pointer;border:none;border-radius:13px;padding:13px 22px;font-family:Georgia,serif;font-size:15px;font-weight:600;transition:all .15s}.mb:hover{filter:brightness(1.08);transform:translateY(-1px)}.ht{cursor:pointer;border:none;background:rgba(251,191,36,0.15);border-radius:10px;padding:8px 14px;font-family:Georgia,serif;font-size:13px;color:#92400e;transition:all .15s}.ht:hover{background:rgba(251,191,36,0.28)}`}</style>
-      <div style={{background:"#1e293b",padding:"11px 14px",display:"flex",alignItems:"center",gap:10}}>
-        <button className="nb" onClick={()=>setView("list")} style={{color:"white"}}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
-        </button>
-        <div style={{flex:1}}>
-          <div style={{fontSize:11,color:"#94a3b8",fontStyle:"italic",fontFamily:"'Lora',Georgia,serif"}}>{card.cat} · Scheda {card.id}</div>
-          <div style={{fontSize:14,color:"white",fontFamily:"'Playfair Display',Georgia,serif",fontWeight:600,lineHeight:1.3}}>{card.title}</div>
-        </div>
-        {done.has(card.id)&&<span style={{fontSize:17}}>✅</span>}
+    <div style={{minHeight:"100vh",background:"#f0f4f8",fontFamily:"system-ui,sans-serif"}}>
+      <style>{BASE_STYLE}</style>
+      <Header back={()=>{setNavSection(card.cat);setView("list");}} backLabel={card.cat}
+        title={card.title} subtitle={`Scheda ${card.id} · ${DL[card.diff]}`}/>
+      <div style={{height:4,background:"#dbeafe"}}>
+        <div style={{height:"100%",background:cc.acc,width:`${(progV/totalP)*100}%`,transition:"width .4s ease"}}/>
       </div>
-      <div style={{height:4,background:"#e2e8f0"}}><div style={{height:"100%",background:cc.acc,width:`${(progV/totalP)*100}%`,transition:"width .4s ease"}}/></div>
-      <div style={{maxWidth:640,margin:"0 auto",padding:"0 12px 80px"}}>
+      <div style={{maxWidth:640,margin:"0 auto",padding:"16px 14px 80px"}}>
         {phase==="enunciato"&&(
-          <div style={{paddingTop:18}}>
-            {FigComp&&<div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"12px",marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div>
+            {FigComp&&<div style={{background:"white",border:`1.5px solid #e5e7eb`,borderRadius:12,padding:"12px",
+              marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center",
+              boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
               <FigComp step={-1} phase="enunciato"/>
             </div>}
-            <div style={{background:cc.bg,border:`2px solid ${cc.brd}`,borderRadius:18,padding:"18px",marginBottom:10}}>
-              <div style={{fontSize:11,color:cc.acc,textTransform:"uppercase",letterSpacing:2,marginBottom:8,fontFamily:"'Lora',Georgia,serif"}}>Enunciato</div>
-              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:15,lineHeight:1.75,color:"#1e293b",fontStyle:"italic"}}>{card.stmt}</p>
+            <div style={{background:"white",borderLeft:`4px solid ${cc.acc}`,borderRadius:12,padding:"18px",marginBottom:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+              <div style={{fontSize:11,color:cc.acc,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8,fontWeight:700}}>Enunciato</div>
+              <p style={{margin:0,fontSize:15,lineHeight:1.75,color:"#1f2937",fontStyle:"italic"}}>{card.stmt}</p>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-              <div style={{background:"white",border:"1.5px solid #e2e8f0",borderRadius:13,padding:"13px"}}>
-                <div style={{fontSize:10,color:"#64748b",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'Lora',Georgia,serif"}}>Dati / Ipotesi</div>
-                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151",fontFamily:"'Lora',Georgia,serif"}}>{card.hyp}</p>
+              <div style={{background:"white",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"13px",boxShadow:"0 1px 3px rgba(0,0,0,.05)"}}>
+                <div style={{fontSize:10,color:"#6b7280",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontWeight:600}}>Dati / Ipotesi</div>
+                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151"}}>{card.hyp}</p>
               </div>
-              <div style={{background:"white",border:"1.5px solid #e2e8f0",borderRadius:13,padding:"13px"}}>
-                <div style={{fontSize:10,color:"#64748b",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontFamily:"'Lora',Georgia,serif"}}>Obiettivo / Tesi</div>
-                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151",fontFamily:"'Lora',Georgia,serif",fontWeight:600}}>{card.tesi}</p>
+              <div style={{background:"white",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"13px",boxShadow:"0 1px 3px rgba(0,0,0,.05)"}}>
+                <div style={{fontSize:10,color:"#6b7280",marginBottom:5,textTransform:"uppercase",letterSpacing:1.5,fontWeight:600}}>Obiettivo / Tesi</div>
+                <p style={{margin:0,fontSize:12,lineHeight:1.6,color:"#374151",fontWeight:600}}>{card.tesi}</p>
               </div>
             </div>
-            <div style={{background:"#fefce8",border:"1.5px solid #fde68a",borderRadius:13,padding:"13px 15px",marginBottom:16}}>
-              <p style={{margin:0,fontSize:14,fontFamily:"'Lora',Georgia,serif",color:"#78350f",lineHeight:1.6}}>{card.idea}</p>
+            <div style={{background:"#fefce8",border:"1px solid #fde68a",borderRadius:10,padding:"12px 15px",marginBottom:16}}>
+              <p style={{margin:0,fontSize:13,color:"#854d0e",lineHeight:1.6}}>{card.idea}</p>
             </div>
-            <button className="mb" onClick={next} style={{width:"100%",background:cc.acc,color:"white",textAlign:"center",fontSize:16}}>Inizia il procedimento →</button>
+            <button className="action-btn" onClick={next}
+              style={{width:"100%",background:cc.acc,color:"white",borderRadius:10,padding:"14px",fontSize:15}}>
+              Inizia il procedimento →
+            </button>
           </div>
         )}
         {phase==="steps"&&cur&&(
-          <div style={{paddingTop:16}}>
-            {FigComp&&<div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"10px",marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div>
+            {FigComp&&<div style={{background:"white",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"10px",
+              marginBottom:12,height:200,display:"flex",alignItems:"center",justifyContent:"center",
+              boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
               <FigComp step={step} phase="steps"/>
             </div>}
-            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
-              {card.steps.map((_,i)=><div key={i} style={{height:5,flex:1,borderRadius:3,background:i<=step?cc.acc:"#e2e8f0",opacity:i<step?0.45:1,transition:"all .3s"}}/>)}
-              <span style={{fontSize:12,color:"#64748b",whiteSpace:"nowrap",fontFamily:"'Lora',Georgia,serif"}}>{step+1}/{card.steps.length}</span>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:14}}>
+              {card.steps.map((_,i)=><div key={i} style={{height:5,flex:1,borderRadius:3,
+                background:i<=step?cc.acc:"#e5e7eb",opacity:i<step?.5:1,transition:"all .3s"}}/>)}
+              <span style={{fontSize:12,color:"#9ca3af",whiteSpace:"nowrap",marginLeft:4}}>{step+1}/{card.steps.length}</span>
             </div>
-            <div style={{background:"white",border:`2px solid ${cc.brd}`,borderRadius:18,padding:"20px 18px",marginBottom:10,boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"white",border:"1.5px solid #e5e7eb",borderRadius:12,padding:"20px 18px",
+              marginBottom:10,boxShadow:"0 2px 10px rgba(0,0,0,.06)"}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                <div style={{width:30,height:30,borderRadius:"50%",background:cc.acc,color:"white",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,flexShrink:0}}>{step+1}</div>
-                <h3 style={{margin:0,fontFamily:"'Playfair Display',Georgia,serif",fontSize:16,color:"#1e293b",fontWeight:600,lineHeight:1.3}}>{cur.ti}</h3>
+                <div style={{width:30,height:30,borderRadius:"50%",background:cc.acc,color:"white",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14,flexShrink:0}}>{step+1}</div>
+                <h3 style={{margin:0,fontSize:16,color:"#1f2937",fontWeight:700,lineHeight:1.3}}>{cur.ti}</h3>
               </div>
-              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:14,lineHeight:1.8,color:"#374151"}}>{cur.tx}</p>
+              <p style={{margin:0,fontSize:14,lineHeight:1.8,color:"#374151"}}>{cur.tx}</p>
             </div>
             <div style={{marginBottom:14}}>
-              <button className="ht" onClick={()=>setHint(h=>!h)}>💡 {hint?"Nascondi":"Mostra"} suggerimento</button>
-              {hint&&<div style={{background:"#fefce8",border:"1.5px solid #fde68a",borderRadius:11,padding:"11px 14px",marginTop:7}}>
-                <p style={{margin:0,fontSize:13,fontFamily:"'Lora',Georgia,serif",color:"#78350f",lineHeight:1.65}}>{cur.hi}</p>
+              <button className="hint-btn" onClick={()=>setHint(h=>!h)}>
+                💡 {hint?"Nascondi":"Mostra"} suggerimento
+              </button>
+              {hint&&<div style={{background:"#fefce8",border:"1px solid #fde68a",borderRadius:8,padding:"10px 14px",marginTop:7}}>
+                <p style={{margin:0,fontSize:13,color:"#854d0e",lineHeight:1.65}}>{cur.hi}</p>
               </div>}
             </div>
-            <div style={{display:"flex",gap:9}}>
-              <button className="mb" onClick={prev} style={{flex:1,background:"#f1f5f9",color:"#374151",textAlign:"center"}}>← Indietro</button>
-              <button className="mb" onClick={next} style={{flex:2,background:cc.acc,color:"white",textAlign:"center"}}>{step<card.steps.length-1?"Passo successivo →":"Concludi ✓"}</button>
+            <div style={{display:"flex",gap:8}}>
+              <button className="action-btn" onClick={prev}
+                style={{flex:1,background:"#f3f4f6",color:"#374151",borderRadius:10,padding:"12px",fontSize:14}}>← Indietro</button>
+              <button className="action-btn" onClick={next}
+                style={{flex:2,background:cc.acc,color:"white",borderRadius:10,padding:"12px",fontSize:14}}>
+                {step<card.steps.length-1?"Passo successivo →":"Concludi ✓"}
+              </button>
             </div>
           </div>
         )}
         {phase==="done"&&(
           <div style={{paddingTop:36,textAlign:"center"}}>
             <div style={{fontSize:60,marginBottom:14}}>🎉</div>
-            <h2 style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:24,color:"#1e293b",marginBottom:6}}>Scheda completata!</h2>
-            <p style={{fontFamily:"'Lora',Georgia,serif",fontSize:15,color:cc.acc,fontWeight:600,marginBottom:20}}>{card.title}</p>
-            <div style={{background:cc.bg,border:`2px solid ${cc.brd}`,borderRadius:15,padding:"14px 18px",marginBottom:18,textAlign:"left"}}>
-              <div style={{fontSize:10,color:cc.acc,marginBottom:6,textTransform:"uppercase",letterSpacing:2,fontFamily:"'Lora',Georgia,serif"}}>Risultato:</div>
-              <p style={{margin:0,fontFamily:"'Lora',Georgia,serif",fontSize:14,fontStyle:"italic",color:"#1e293b",lineHeight:1.7}}>{card.tesi}</p>
+            <h2 style={{fontSize:24,color:"#1f2937",marginBottom:6}}>Scheda completata!</h2>
+            <p style={{fontSize:15,color:cc.acc,fontWeight:600,marginBottom:20}}>{card.title}</p>
+            <div style={{background:"white",border:`1.5px solid #e5e7eb`,borderLeft:`4px solid ${cc.acc}`,
+              borderRadius:12,padding:"14px 18px",marginBottom:16,textAlign:"left",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+              <div style={{fontSize:10,color:cc.acc,marginBottom:6,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700}}>Risultato:</div>
+              <p style={{margin:0,fontSize:14,fontStyle:"italic",color:"#1f2937",lineHeight:1.7}}>{card.tesi}</p>
             </div>
-            <div style={{background:"#fef9c3",border:"2px solid #fde68a",borderRadius:13,padding:"12px 16px",marginBottom:20}}>
-              <p style={{margin:0,fontSize:14,fontFamily:"'Lora',Georgia,serif",color:"#78350f"}}>✅ Schede completate: <strong>{done.size}</strong> / {CARDS.length} ({pct}%)</p>
+            <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 16px",marginBottom:20}}>
+              <p style={{margin:0,fontSize:14,color:"#15803d"}}>✅ Schede completate: <strong>{done.size}</strong> / {CARDS.length} ({pct}%)</p>
             </div>
-            <div style={{display:"flex",gap:9}}>
-              <button className="mb" onClick={()=>{setPhase("enunciato");setStep(0);setHint(false);}} style={{flex:1,background:"#f1f5f9",color:"#374151"}}>🔄 Rivedi</button>
-              <button className="mb" onClick={()=>setView("list")} style={{flex:1,background:cc.acc,color:"white"}}>📚 Torna all'indice</button>
+            <div style={{display:"flex",gap:8}}>
+              <button className="action-btn" onClick={()=>{setPhase("enunciato");setStep(0);setHint(false);}}
+                style={{flex:1,background:"#f3f4f6",color:"#374151",borderRadius:10,padding:"12px",fontSize:14}}>🔄 Rivedi</button>
+              <button className="action-btn" onClick={()=>{setNavSection(card.cat);setView("list");}}
+                style={{flex:1,background:cc.acc,color:"white",borderRadius:10,padding:"12px",fontSize:14}}>📚 Torna alle schede</button>
             </div>
           </div>
         )}
