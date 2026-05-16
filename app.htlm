@@ -401,10 +401,225 @@ const Fig16=({step:s,phase})=>{
   </svg>;
 };
 
-const FIGS={1:Fig1,2:Fig2,3:Fig3,4:Fig4,5:Fig5,6:Fig6,7:Fig7,8:Fig8,9:Fig9,10:Fig10,11:Fig11,12:Fig12,13:Fig13,14:Fig14,15:Fig15,16:Fig16};
 
-/* ── DATA ─────────────────────────────────────────────── */
+
+/* ── Fig17–Fig25: Le Coniche ─────────────────────────── */
+
+/* 17 · Circonferenza centrata nell'origine x²+y²=r² */
+const Fig17=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=95,u=22;
+  const X=x=>ox+x*u, Y=y=>oy-y*u;
+  const r=3,rPx=r*u;
+  const showP=t>=0,showR=t>=1,showEq=t>=2,showRes=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-4.5} xMax={4.5} yMin={-4} yMax={4} ux={u} uy={u} grid/>
+    <circle cx={ox} cy={oy} r={rPx} fill="rgba(8,145,178,0.10)" stroke="#0891b2" strokeWidth="2.2"/>
+    {showP&&<><Pt x={X(2)} y={Y(Math.sqrt(5))} label="P(x,y)" dx={5} dy={-5} fill="#dc2626" r={3.5}/>
+      <line x1={ox} y1={oy} x2={X(2)} y2={Y(Math.sqrt(5))} stroke={hi(showR,"#0891b2")} strokeWidth={showR?2.2:0} strokeDasharray="5,3" style={{transition:TR}}/></>}
+    {showR&&<Lbl x={X(0.8)} y={Y(1.4)} fill="#0891b2" fw="700">r=3</Lbl>}
+    {showEq&&<Lbl x={10} y={25} fill="#0891b2" fw="700" fs={13}>x²+y²=9</Lbl>}
+    {showRes&&<Lbl x={10} y={40} fill="#10b981" fw="700" fs={11}>Ogni punto a dist. 3 da O ✓</Lbl>}
+    <Pt x={ox} y={oy} label="O" dx={-12} dy={10} fill="#374151" r={3}/>
+  </svg>;
+};
+
+/* 18 · Circonferenza con centro generico C(2,–1), r=2 */
+const Fig18=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=80,oy=115,u=24;
+  const X=x=>ox+x*u, Y=y=>oy-y*u;
+  const cx=2,cy=-1,r=2,Cpx=X(cx),Cpy=Y(cy),rPx=r*u;
+  const showC=t>=0,showR=t>=1,showEq=t>=2,showRes=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-2} xMax={5.5} yMin={-3.5} yMax={3} ux={u} uy={u} grid/>
+    <circle cx={Cpx} cy={Cpy} r={rPx} fill="rgba(8,145,178,0.10)" stroke="#0891b2" strokeWidth="2.2"/>
+    {showC&&<Pt x={Cpx} y={Cpy} label="C(2,−1)" dx={5} dy={-6} fill="#dc2626" r={4}/>}
+    {showR&&<><line x1={Cpx} y1={Cpy} x2={Cpx+rPx} y2={Cpy} stroke="#f97316" strokeWidth="2.2"/>
+      <Lbl x={Cpx+4} y={Cpy-5} fill="#ea580c" fw="700" fs={11}>r=2</Lbl></>}
+    {showEq&&<Lbl x={8} y={22} fill="#0891b2" fw="700" fs={12}>(x−2)²+(y+1)²=4</Lbl>}
+    {showRes&&<Lbl x={8} y={36} fill="#10b981" fw="700" fs={11}>centro C, raggio 2 ✓</Lbl>}
+  </svg>;
+};
+
+/* 19 · Completamento del quadrato: x²+y²−4x+6y−3=0 → C(2,−3), r=4 */
+const Fig19=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=80,oy=140,u=18;
+  const X=x=>ox+x*u, Y=y=>oy-y*u;
+  const cx=2,cy=-3,r=4,Cpx=X(cx),Cpy=Y(cy),rPx=r*u;
+  const showCircle=t>=1,showC=t>=2,showR=t>=3,showRes=t===4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-1} xMax={7} yMin={-7.5} yMax={1.5} ux={u} uy={u} grid/>
+    {showCircle&&<circle cx={Cpx} cy={Cpy} r={rPx} fill="rgba(8,145,178,0.10)" stroke="#0891b2" strokeWidth="2.2"/>}
+    {showC&&<Pt x={Cpx} y={Cpy} label="C(2,−3)" dx={5} dy={-5} fill="#dc2626" r={4}/>}
+    {showR&&<><line x1={Cpx} y1={Cpy} x2={Cpx+rPx} y2={Cpy} stroke="#f97316" strokeWidth="2"/>
+      <Lbl x={Cpx+4} y={Cpy-5} fill="#ea580c" fw="700" fs={11}>r=4</Lbl></>}
+    {showRes&&<Lbl x={5} y={18} fill="#10b981" fw="700" fs={11}>C(2,−3), r=4 ✓</Lbl>}
+  </svg>;
+};
+
+/* 20 · Posizione retta y=x+1 e cerchio x²+y²=8 → secante */
+const Fig20=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=95,u=20;
+  const X=x=>ox+x*u, Y=y=>oy-y*u;
+  const r=Math.sqrt(8),rPx=r*u;
+  const showCircle=t>=0,showLine=t>=1,showPts=t>=2,showRes=t===3||t===99;
+  // intersections of y=x+1 and x²+y²=8: 2x²+2x-7=0 → x=(-1±√15)/2
+  const sq=Math.sqrt(15)/2;
+  const x1=(-1+Math.sqrt(15))/2,y1=x1+1;
+  const x2=(-1-Math.sqrt(15))/2,y2=x2+1;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-4} xMax={4} yMin={-3.5} yMax={3.5} ux={u} uy={u} grid/>
+    {showCircle&&<circle cx={ox} cy={oy} r={rPx} fill="rgba(8,145,178,0.08)" stroke="#0891b2" strokeWidth="2"/>}
+    {showLine&&<line x1={X(-3)} y1={Y(-2)} x2={X(2.5)} y2={Y(3.5)} stroke="#dc2626" strokeWidth="2" strokeLinecap="round"/>}
+    {showPts&&<><Pt x={X(x1)} y={Y(y1)} fill="#10b981" r={4}/><Pt x={X(x2)} y={Y(y2)} fill="#10b981" r={4}/></>}
+    {showRes&&<Lbl x={5} y={18} fill="#10b981" fw="700" fs={11}>Retta secante (Δ&gt;0) ✓</Lbl>}
+    <Lbl x={X(1.6)} y={Y(2.8)} fill="#dc2626" fw="700" fs={10}>y=x+1</Lbl>
+  </svg>;
+};
+
+/* 21 · Ellisse x²/16+y²/9=1 — a=4, b=3, fuochi F(±√7,0) */
+const Fig21=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=95,ux=22,uy=22;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const a=4,b=3,c=Math.sqrt(7);
+  const showEl=t>=0,showAxes2=t>=1,showFoci=t>=2,showRes=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-5} xMax={5} yMin={-4} yMax={4} ux={ux} uy={uy} grid/>
+    {showEl&&<ellipse cx={ox} cy={oy} rx={a*ux} ry={b*uy} fill="rgba(139,92,246,0.10)" stroke="#7c3aed" strokeWidth="2.2"/>}
+    {showAxes2&&<>
+      <line x1={X(-a)} y1={oy} x2={X(a)} y2={oy} stroke="#f97316" strokeWidth="2" strokeDasharray="5,3"/>
+      <line x1={ox} y1={Y(-b)} x2={ox} y2={Y(b)} stroke="#10b981" strokeWidth="2" strokeDasharray="5,3"/>
+      <Lbl x={X(a)+4} y={oy+4} fill="#ea580c" fw="700" fs={11}>a=4</Lbl>
+      <Lbl x={ox+4} y={Y(b)-3} fill="#059669" fw="700" fs={11}>b=3</Lbl>
+    </>}
+    {showFoci&&<>
+      <Pt x={X(c)} y={oy} label={`F₁`} dx={4} dy={-7} fill="#dc2626" r={4}/>
+      <Pt x={X(-c)} y={oy} label={`F₂`} dx={-18} dy={-7} fill="#dc2626" r={4}/>
+      <Lbl x={5} y={20} fill="#dc2626" fw="700" fs={11}>c=√7≈2.65</Lbl>
+    </>}
+    {showRes&&<Lbl x={5} y={32} fill="#10b981" fw="700" fs={11}>F(±√7,0) ✓</Lbl>}
+  </svg>;
+};
+
+/* 22 · Ellisse traslata (x−1)²/9+(y+2)²/4=1, centro C(1,−2) */
+const Fig22=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=80,oy=140,ux=20,uy=20;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const h=1,k=-2,a=3,b=2;
+  const showEl=t>=0,showC=t>=1,showRes=t===2||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-1.5} xMax={6} yMin={-5} yMax={1.5} ux={ux} uy={uy} grid/>
+    {showEl&&<ellipse cx={X(h)} cy={Y(k)} rx={a*ux} ry={b*uy} fill="rgba(139,92,246,0.10)" stroke="#7c3aed" strokeWidth="2.2"/>}
+    {showC&&<Pt x={X(h)} y={Y(k)} label="C(1,−2)" dx={5} dy={-6} fill="#dc2626" r={4}/>}
+    {showRes&&<><Lbl x={5} y={20} fill="#7c3aed" fw="700" fs={11}>a=3, b=2</Lbl>
+      <Lbl x={5} y={32} fill="#10b981" fw="700" fs={11}>Centro C(1,−2) ✓</Lbl></>}
+  </svg>;
+};
+
+/* 23 · Iperbole x²/4−y²/9=1, a=2, b=3, asintoti y=±(3/2)x */
+const Fig23=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=95,ux=22,uy=16;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const a=2,b=3,steps=40;
+  const makeHyp=(sign)=>{
+    const pts=[];
+    for(let i=0;i<=steps;i++){const u2=i/steps*2.5;const x=a*Math.cosh(u2);const y=b*Math.sinh(u2)*sign;pts.push(`${X(x).toFixed(1)},${Y(y).toFixed(1)}`);}
+    return pts.join(" ");
+  };
+  const makeHypL=(sign)=>{
+    const pts=[];
+    for(let i=0;i<=steps;i++){const u2=i/steps*2.5;const x=-a*Math.cosh(u2);const y=b*Math.sinh(u2)*sign;pts.push(`${X(x).toFixed(1)},${Y(y).toFixed(1)}`);}
+    return pts.join(" ");
+  };
+  const showH=t>=0,showAs=t>=1,showRes=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-5} xMax={5} yMin={-5.5} yMax={5.5} ux={ux} uy={uy} grid/>
+    {showAs&&<>
+      <line x1={X(-5)} y1={Y(-5*b/a)} x2={X(5)} y2={Y(5*b/a)} stroke="#f97316" strokeWidth="1.5" strokeDasharray="5,3"/>
+      <line x1={X(-5)} y1={Y(5*b/a)} x2={X(5)} y2={Y(-5*b/a)} stroke="#f97316" strokeWidth="1.5" strokeDasharray="5,3"/>
+      <Lbl x={X(2.8)} y={Y(4.5)} fill="#ea580c" fw="700" fs={10}>y=3/2·x</Lbl>
+    </>}
+    {showH&&<>
+      <polyline points={makeHyp(1)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+      <polyline points={makeHyp(-1)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+      <polyline points={makeHypL(1)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+      <polyline points={makeHypL(-1)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+    </>}
+    {showRes&&<Lbl x={5} y={20} fill="#10b981" fw="700" fs={11}>asintoti y=±3/2·x ✓</Lbl>}
+  </svg>;
+};
+
+/* 24 · Iperbole traslata (x+1)²/9−(y−2)²/4=1, centro C(−1,2) */
+const Fig24=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=120,oy=135,ux=20,uy=18;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const h=-1,k=2,a=3,b=2,nSteps=40;
+  const makeB=(sx,sy)=>{
+    const pts=[];
+    for(let i=0;i<=nSteps;i++){const u=i/nSteps*2.2;const x=h+sx*a*Math.cosh(u);const y=k+sy*b*Math.sinh(u);pts.push(`${X(x).toFixed(1)},${Y(y).toFixed(1)}`);}
+    return pts.join(" ");
+  };
+  const showH=t>=0,showC=t>=1,showAs=t>=2,showRes=t===3||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-5.5} xMax={4} yMin={-4} yMax={6} ux={ux} uy={uy} grid/>
+    {showAs&&<>
+      <line x1={X(-6)} y1={Y(k-b/a*((-6)-h))} x2={X(4)} y2={Y(k+b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
+      <line x1={X(-6)} y1={Y(k+b/a*((-6)-h))} x2={X(4)} y2={Y(k-b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
+    </>}
+    {showH&&<>
+      <polyline points={makeB(1,1)} fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"/>
+      <polyline points={makeB(1,-1)} fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"/>
+      <polyline points={makeB(-1,1)} fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"/>
+      <polyline points={makeB(-1,-1)} fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"/>
+    </>}
+    {showC&&<Pt x={X(h)} y={Y(k)} label="C(−1,2)" dx={5} dy={-6} fill="#dc2626" r={4}/>}
+    {showRes&&<Lbl x={5} y={18} fill="#10b981" fw="700" fs={11}>Centro C(−1,2) ✓</Lbl>}
+  </svg>;
+};
+
+/* 25 · Funzione omografica y=(2x+1)/(x−3): asintoti x=3, y=2 */
+const Fig25=({step:s,phase})=>{
+  const t=phase==="done"?99:phase==="steps"?s:-1;
+  const ox=100,oy=95,ux=20,uy=18;
+  const X=x=>ox+x*ux, Y=y=>oy-y*uy;
+  const f=x=>(2*x+1)/(x-3);
+  const makeBranch=(xStart,xEnd,skip=false)=>{
+    const pts=[];
+    for(let i=0;i<=60;i++){
+      const x=xStart+(xEnd-xStart)*i/60;
+      if(Math.abs(x-3)<0.15)continue;
+      const y=f(x);
+      if(y<-8||y>8)continue;
+      pts.push(`${X(x).toFixed(1)},${Y(y).toFixed(1)}`);
+    }
+    return pts.join(" ");
+  };
+  const showF=t>=0,showAv=t>=1,showAo=t>=2,showRes=t===4||t===99;
+  return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
+    <Axes ox={ox} oy={oy} xMin={-2} xMax={7} yMin={-5} yMax={8} ux={ux} uy={uy} grid/>
+    {showAv&&<line x1={X(3)} y1={Y(-5)} x2={X(3)} y2={Y(8)} stroke="#dc2626" strokeWidth="1.5" strokeDasharray="5,3"/>}
+    {showAo&&<line x1={X(-2)} y1={Y(2)} x2={X(7)} y2={Y(2)} stroke="#f97316" strokeWidth="1.5" strokeDasharray="5,3"/>}
+    {showF&&<>
+      <polyline points={makeBranch(-2,2.85)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+      <polyline points={makeBranch(3.15,7)} fill="none" stroke="#0891b2" strokeWidth="2.2" strokeLinecap="round"/>
+    </>}
+    {showAv&&<Lbl x={X(3)+4} y={Y(7)} fill="#dc2626" fw="700" fs={11}>x=3</Lbl>}
+    {showAo&&<Lbl x={X(6)} y={Y(2)-7} fill="#ea580c" fw="700" fs={11}>y=2</Lbl>}
+    {showRes&&<Lbl x={5} y={20} fill="#10b981" fw="700" fs={11}>asintoti x=3, y=2 ✓</Lbl>}
+  </svg>;
+};
+
+const FIGS={1:Fig1,2:Fig2,3:Fig3,4:Fig4,5:Fig5,6:Fig6,7:Fig7,8:Fig8,9:Fig9,10:Fig10,11:Fig11,12:Fig12,13:Fig13,14:Fig14,15:Fig15,16:Fig16,17:Fig17,18:Fig18,19:Fig19,20:Fig20,21:Fig21,22:Fig22,23:Fig23,24:Fig24,25:Fig25};
+
 const CARDS=[
+
   {id:1,title:"Distanza tra due punti",cat:"Piano Cartesiano",diff:1,
     stmt:"La distanza tra A(x₁,y₁) e B(x₂,y₂) si calcola con d = √((x₂−x₁)² + (y₂−y₁)²), formula derivata dal teorema di Pitagora.",
     hyp:"A(1, 1) e B(4, 3)",tesi:"d(A,B) = √13 ≈ 3.61 unità",
@@ -571,18 +786,529 @@ const CARDS=[
       {ti:"Sviluppa",tx:"y = −x/2 + 1/2 + 3 = −x/2 + 7/2",hi:"1/2 + 3 = 1/2 + 6/2 = 7/2."},
       {ti:"Verifica del passaggio per T",tx:"T(1, 3):  y = −1/2 + 7/2 = 6/2 = 3 ✓",hi:"La verifica per T dovrebbe essere automatica per costruzione."}
     ]},
+
+  ,
+  /* ── Le Coniche ── */
+  {id:17,title:"Circonferenza centrata nell'origine",cat:"Le Coniche",diff:1,
+   stmt:"La circonferenza con centro O(0,0) e raggio r è il luogo dei punti del piano a distanza r dall'origine. La sua equazione è x²+y²=r².",
+   hyp:"Centro O(0,0), raggio r=3",tesi:"x²+y²=9",
+   idea:"💡 Ogni punto P(x,y) sulla circonferenza soddisfa d(P,O)=r. Applica la formula della distanza e quadra entrambi i membri.",
+   steps:[
+     {ti:"Condizione di appartenenza",tx:"P(x,y) sta sulla circonferenza sse d(P,O)=r, cioè √(x²+y²)=r.",hi:"La distanza dall'origine è sempre √(x²+y²)."},
+     {ti:"Eleva al quadrato",tx:"√(x²+y²)=r → x²+y²=r²=9.",hi:"Elevare al quadrato elimina la radice (r>0 garantisce l'equivalenza)."},
+     {ti:"Verifica con un punto",tx:"P(3,0): 9+0=9 ✓. P(0,-3): 0+9=9 ✓.",hi:"Scegli sempre punti sugli assi per verificare rapidamente."},
+     {ti:"Equazione finale",tx:"x²+y²=9 ✓. Il cerchio ha centro O e r=3.",hi:"L'equazione è simmetrica in x e y: il cerchio è simmetrico rispetto a entrambi gli assi."},
+   ]},
+  {id:18,title:"Circonferenza con centro generico",cat:"Le Coniche",diff:1,
+   stmt:"La circonferenza con centro C(a,b) e raggio r ha equazione (x−a)²+(y−b)²=r². È la forma canonica della circonferenza.",
+   hyp:"C(2,−1), r=2",tesi:"(x−2)²+(y+1)²=4",
+   idea:"💡 La distanza di P(x,y) da C(a,b) deve essere uguale a r: scrivi la formula e quadra.",
+   steps:[
+     {ti:"Scrivi la condizione d(P,C)=r",tx:"√((x−a)²+(y−b)²)=r → (x−a)²+(y−b)²=r².",hi:"La traslazione del centro cambia x in (x−a) e y in (y−b)."},
+     {ti:"Sostituisci i dati",tx:"a=2, b=−1, r=2: (x−2)²+(y+1)²=4.",hi:"Attenzione al segno: b=−1 → (y−(−1))=(y+1)."},
+     {ti:"Verifica",tx:"C(2,−1): (0)²+(0)²=0≠4 (il centro è interno, non sulla curva). P(4,−1): (2)²+(0)²=4 ✓.",hi:"Il centro non appartiene alla circonferenza: la sua distanza dal centro è 0<r."},
+     {ti:"Equazione finale",tx:"(x−2)²+(y+1)²=4 ✓",hi:""},
+   ]},
+  {id:19,title:"Dalla forma generale alla canonica",cat:"Le Coniche",diff:2,
+   stmt:"L'equazione x²+y²+Dx+Ey+F=0 si trasforma in forma canonica completando il quadrato. Si ottengono centro C(−D/2, −E/2) e r=√((D/2)²+(E/2)²−F).",
+   hyp:"x²+y²−4x+6y−3=0",tesi:"Centro C(2,−3), raggio r=4",
+   idea:"💡 Raggruppa i termini in x e in y, poi completa il quadrato aggiungendo e sottraendo le costanti opportune.",
+   steps:[
+     {ti:"Raggruppa per variabile",tx:"(x²−4x)+(y²+6y)=3",hi:"Porta la costante F a destra: F=−3 → 3 a destra."},
+     {ti:"Completa il quadrato in x",tx:"x²−4x+4=(x−2)², aggiungi 4 ad entrambi i membri: (x−2)²+(y²+6y)=3+4=7.",hi:"Per x²+px, aggiungi (p/2)²=(−4/2)²=4."},
+     {ti:"Completa il quadrato in y",tx:"y²+6y+9=(y+3)², aggiungi 9: (x−2)²+(y+3)²=7+9=16.",hi:"Per y²+qy, aggiungi (q/2)²=(6/2)²=9."},
+     {ti:"Leggi centro e raggio",tx:"(x−2)²+(y+3)²=16 → C(2,−3), r=√16=4.",hi:"Il centro ha coordinate (a,b) dove a e b sono quelli che azzerano i quadrati."},
+     {ti:"Verifica",tx:"C(2,−3): 4+9−8−18−3=−16≠0. Punto (2+4,−3)=(6,−3): 36+9−24−18−3=0 ✓",hi:"Il centro non soddisfa l'equazione; un punto sul cerchio sì."},
+   ]},
+  {id:20,title:"Posizione retta-circonferenza",cat:"Le Coniche",diff:2,
+   stmt:"Per studiare la posizione reciproca di una retta e una circonferenza, sostituisci la retta nel sistema e calcola il discriminante Δ: Δ>0 secante, Δ=0 tangente, Δ<0 esterna.",
+   hyp:"Retta y=x+1, circonferenza x²+y²=8",tesi:"Retta secante (2 punti di intersezione)",
+   idea:"💡 Sostituisci y=x+1 nell'equazione della circonferenza e risolvi l'equazione di 2° grado risultante.",
+   steps:[
+     {ti:"Sostituisci la retta",tx:"x²+(x+1)²=8 → x²+x²+2x+1=8 → 2x²+2x−7=0.",hi:"Sostituire y elimina una variabile e ottieni un'equazione in solo x."},
+     {ti:"Calcola il discriminante",tx:"Δ=b²−4ac=4+4·2·7=4+56=60>0.",hi:"Δ>0 garantisce due soluzioni reali distinte, cioè due intersezioni."},
+     {ti:"Trova le intersezioni",tx:"x=(−2±√60)/4=(−1±√15)/2. Due punti reali distinti.",hi:"Non serve calcolare esattamente i valori: la condizione Δ>0 è sufficiente."},
+     {ti:"Conclusione",tx:"Δ=60>0 → la retta è secante alla circonferenza. ✓",hi:"Se avessi trovato Δ=0: tangente. Δ<0: retta esterna (nessuna intersezione reale)."},
+   ]},
+  {id:21,title:"Ellisse centrata nell'origine",cat:"Le Coniche",diff:2,
+   stmt:"L'ellisse x²/a²+y²/b²=1 (a>b>0) ha semi-asse maggiore a sull'asse x, semi-asse minore b sull'asse y, e fuochi F(±c,0) con c=√(a²−b²).",
+   hyp:"x²/16+y²/9=1",tesi:"a=4, b=3, c=√7, fuochi F(±√7, 0)",
+   idea:"💡 Leggi a² e b² direttamente dall'equazione, poi calcola c con la relazione c²=a²−b².",
+   steps:[
+     {ti:"Leggi i semi-assi",tx:"a²=16 → a=4; b²=9 → b=3. Semi-asse maggiore a=4 (asse x), minore b=3 (asse y).",hi:"Il semi-asse maggiore corrisponde al denominatore più grande."},
+     {ti:"Calcola c",tx:"c²=a²−b²=16−9=7 → c=√7≈2.65.",hi:"c è la distanza dal centro ai fuochi. Si ha sempre a>c>0 per l'ellisse."},
+     {ti:"Posizione dei fuochi",tx:"I fuochi stanno sull'asse del semi-asse maggiore (asse x): F₁(√7,0) e F₂(−√7,0).",hi:"Se a²>b² l'asse maggiore è orizzontale; se b²>a² è verticale."},
+     {ti:"Verifica con vertice",tx:"Vertice A(4,0): 16/16+0/9=1 ✓. Vertice B(0,3): 0/16+9/9=1 ✓.",hi:"I vertici dell'ellisse sono (±a,0) e (0,±b)."},
+   ]},
+  {id:22,title:"Ellisse traslata",cat:"Le Coniche",diff:2,
+   stmt:"L'ellisse con centro C(h,k) ha equazione (x−h)²/a²+(y−k)²/b²=1. Si ottiene traslando l'ellisse standard sostituendo x→(x−h) e y→(y−k).",
+   hyp:"(x−1)²/9+(y+2)²/4=1",tesi:"Centro C(1,−2), a=3, b=2, fuochi F(1±√5,−2)",
+   idea:"💡 Identifica h e k dai quadrati, poi applica le stesse formule dell'ellisse centrata nell'origine.",
+   steps:[
+     {ti:"Identifica il centro",tx:"(x−1)²→h=1; (y+2)²=(y−(−2))²→k=−2. Centro C(1,−2).",hi:"Il centro è il punto che azzera entrambi i quadrati: x=h, y=k."},
+     {ti:"Leggi i semi-assi",tx:"a²=9→a=3 (asse orizzontale locale); b²=4→b=2.",hi:"a²>b²: l'asse maggiore è parallelo all'asse x."},
+     {ti:"Calcola c",tx:"c²=9−4=5 → c=√5. Fuochi F(1±√5,−2).",hi:"I fuochi si trovano a distanza c dal centro lungo l'asse maggiore (orizzontale)."},
+   ]},
+  {id:23,title:"Iperbole centrata nell'origine",cat:"Le Coniche",diff:2,
+   stmt:"L'iperbole x²/a²−y²/b²=1 ha centro O, vertici V(±a,0) e asintoti y=±(b/a)x. I fuochi sono F(±c,0) con c=√(a²+b²).",
+   hyp:"x²/4−y²/9=1",tesi:"a=2, b=3, c=√13, asintoti y=±(3/2)x",
+   idea:"💡 Leggi a² e b², poi calcola c con c²=a²+b² (nota: il segno è + per l'iperbole, non −).",
+   steps:[
+     {ti:"Leggi a e b",tx:"a²=4→a=2; b²=9→b=3. Vertici V(±2,0).",hi:"Per l'iperbole x²/a²−y²/b²=1, i vertici sono sull'asse x."},
+     {ti:"Asintoti",tx:"y=±(b/a)x=±(3/2)x.",hi:"Gli asintoti non vengono mai toccati dall'iperbole ma le 'guidano' all'infinito."},
+     {ti:"Calcola c",tx:"c²=a²+b²=4+9=13 → c=√13. Fuochi F(±√13,0).",hi:"Per l'iperbole c²=a²+b² (diverso dall'ellisse dove c²=a²−b²)."},
+     {ti:"Verifica con il vertice",tx:"V(2,0): 4/4−0/9=1 ✓.",hi:"I vertici dell'iperbole soddisfano sempre l'equazione."},
+   ]},
+  {id:24,title:"Iperbole traslata",cat:"Le Coniche",diff:2,
+   stmt:"L'iperbole con centro C(h,k) ha equazione (x−h)²/a²−(y−k)²/b²=1. Gli asintoti passano per C con pendenza ±b/a.",
+   hyp:"(x+1)²/9−(y−2)²/4=1",tesi:"Centro C(−1,2), asintoti: y−2=±(2/3)(x+1)",
+   idea:"💡 Identifica il centro dagli spostamenti, poi applica le stesse regole dell'iperbole standard.",
+   steps:[
+     {ti:"Identifica il centro",tx:"(x+1)²=(x−(−1))²→h=−1; (y−2)²→k=2. Centro C(−1,2).",hi:"Il centro è sempre il punto (h,k) che annulla entrambi i quadrati."},
+     {ti:"Leggi a e b",tx:"a²=9→a=3; b²=4→b=2.",hi:""},
+     {ti:"Scrivi gli asintoti traslati",tx:"y−k=±(b/a)(x−h) → y−2=±(2/3)(x+1).",hi:"Gli asintoti dell'iperbole traslata passano per il centro C(h,k)."},
+   ]},
+  {id:25,title:"Funzione omografica",cat:"Le Coniche",diff:2,
+   stmt:"La funzione y=(ax+b)/(cx+d) ha dominio ℝ∖{−d/c}, asintoto verticale x=−d/c, asintoto orizzontale y=a/c. Il suo grafico è un'iperbole equilatera.",
+   hyp:"y=(2x+1)/(x−3)",tesi:"Asintoto verticale x=3, asintoto orizzontale y=2",
+   idea:"💡 Il denominatore nullo dà l'asintoto verticale; per l'orizzontale guarda il rapporto tra i coefficienti di x.",
+   steps:[
+     {ti:"Dominio",tx:"x−3≠0 → x≠3. Dominio: ℝ∖{3}.",hi:"L'asintoto verticale è proprio il valore escluso dal dominio."},
+     {ti:"Asintoto verticale",tx:"x=3 (denominatore=0).",hi:""},
+     {ti:"Asintoto orizzontale",tx:"Per x→±∞: y→(2x)/(x)=2. Asintoto orizzontale: y=2.",hi:"Considera solo i termini di grado più alto a numeratore e denominatore."},
+     {ti:"Verifica con un punto",tx:"x=0: y=(0+1)/(0−3)=−1/3. Punto (0,−1/3) sul grafico.",hi:""},
+     {ti:"Grafico",tx:"Iperbole con rami nei quadranti relativi al centro (3,2). Per x>3, y>2; per x<3, y<2 (ramo basso).",hi:"Il grafico non attraversa mai le asintotiche x=3 e y=2."},
+   ]},
 ];
 
-const CATS=["Tutti","Piano Cartesiano","La Retta","La Parabola"];
+const CATS=["Tutti","Piano Cartesiano","La Retta","La Parabola","Le Coniche"];
 const CC={
   "Piano Cartesiano":{bg:"#fff7ed",brd:"#fed7aa",acc:"#ea580c",icon:"📍"},
-  "La Retta":         {bg:"#eff6ff",brd:"#bfdbfe",acc:"#2563eb",icon:"📏"},
-  "La Parabola":      {bg:"#f5f3ff",brd:"#ddd6fe",acc:"#7c3aed",icon:"⤴️"},
+  "La Retta":        {bg:"#eff6ff",brd:"#bfdbfe",acc:"#2563eb",icon:"📏"},
+  "La Parabola":     {bg:"#f5f3ff",brd:"#ddd6fe",acc:"#7c3aed",icon:"⤴️"},
+  "Le Coniche":      {bg:"#ecfeff",brd:"#a5f3fc",acc:"#0891b2",icon:"⭕"},
 };
 const DL=["","★ Base","★★ Intermedio","★★★ Avanzato"];
 const DC=["","#16a34a","#d97706","#dc2626"];
 
+<<<<<<< Updated upstream
+=======
+
+
+const QUIZZES=[
+  /* ── Piano Cartesiano · 10 Teorici ─────────────────── */
+  {id:"pc1",cat:"Piano Cartesiano",type:"T",
+   q:"Quale formula calcola la distanza tra A(x₁,y₁) e B(x₂,y₂)?",
+   opts:["(x₂−x₁)+(y₂−y₁)","√((x₂−x₁)²+(y₂−y₁)²)","((x₁+x₂)/2,(y₁+y₂)/2)","|x₂−x₁|·|y₂−y₁|"],
+   ans:1,why:"La distanza è l'ipotenusa del triangolo rettangolo: teorema di Pitagora con cateti Δx e Δy.",
+   wr:["Sommare le differenze non dà la lunghezza.","Questa è la formula del punto medio.","Il prodotto non è una distanza."]},
+  {id:"pc3",cat:"Piano Cartesiano",type:"T",
+   q:"La formula del punto medio M tra A(x₁,y₁) e B(x₂,y₂) è:",
+   opts:["M=((x₁+x₂)/2,(y₁+y₂)/2)","M=(x₂−x₁,y₂−y₁)","M=(x₁·x₂,y₁·y₂)","M=((x₁−x₂)/2,(y₁−y₂)/2)"],
+   ans:0,why:"Il punto medio ha coordinate pari alla media aritmetica delle coordinate dei due estremi.",
+   wr:["Quella è lo spostamento (Δx,Δy).","Il prodotto non ha senso geometrico per il punto medio.","Dividere la differenza dà metà dello spostamento, non il medio."]},
+  {id:"pc5",cat:"Piano Cartesiano",type:"T",
+   q:"In quale quadrante si trova il punto P(−3, 5)?",
+   opts:["I (x>0,y>0)","II (x<0,y>0)","III (x<0,y<0)","IV (x>0,y<0)"],
+   ans:1,why:"x=−3<0 e y=5>0: II quadrante (ascissa negativa, ordinata positiva).",
+   wr:["I quadrante: entrambe positive.","III: entrambe negative.","IV: x>0."]},
+  {id:"pc7",cat:"Piano Cartesiano",type:"T",
+   q:"Le diagonali di un parallelogramma si bisecano, cioè:",
+   opts:["Si intersecano ad angolo retto","Si intersecano nel punto medio l'una dell'altra","Hanno la stessa lunghezza","Sono parallele"],
+   ans:1,why:"Il punto d'incontro è il punto medio di entrambe le diagonali: proprietà caratteristica del parallelogramma.",
+   wr:["Angoli retti solo in rettangoli e rombi.","Stessa lunghezza solo nei rettangoli.","Le diagonali si intersecano, non sono parallele."]},
+  {id:"pc9",cat:"Piano Cartesiano",type:"T",
+   q:"La distanza di un punto P(x,y) dall'origine O(0,0) è:",
+   opts:["√(x+y)","x+y","√(x²+y²)","x²+y²"],
+   ans:2,why:"d(P,O)=√((x−0)²+(y−0)²)=√(x²+y²): formula della distanza con secondo estremo in O.",
+   wr:["√(x+y): serve la somma dei quadrati.","x+y: somma coordinate, non distanza.","x²+y² è il quadrato della distanza."]},
+  {id:"pc11",cat:"Piano Cartesiano",type:"T",
+   q:"L'area del triangolo con vertici A(x₁,y₁), B(x₂,y₂), C(x₃,y₃) si calcola con:",
+   opts:["|x₁(y₂−y₃)+x₂(y₃−y₁)+x₃(y₁−y₂)|/2","base×altezza/2","√(s(s−a)(s−b)(s−c))","Δx·Δy/2"],
+   ans:0,why:"La formula del determinante (shoelace) vale sempre per coordinate cartesiane.",
+   wr:["base×altezza richiede di conoscere base e altezza separatamente.","La formula di Erone serve le lunghezze dei lati, non le coordinate.","Δx·Δy/2 vale solo per triangoli rettangoli con cateti paralleli agli assi."]},
+  {id:"pc12",cat:"Piano Cartesiano",type:"T",
+   q:"Tre punti A, B, C sono collineari se e solo se:",
+   opts:["L'area del triangolo ABC è zero","Hanno la stessa ascissa","Le distanze AB+BC=AC","Hanno la stessa ordinata"],
+   ans:0,why:"Area=0 significa che i tre punti non formano un triangolo: stanno sulla stessa retta.",
+   wr:["Stessa ascissa: sono su una retta verticale, caso particolare.","AB+BC=AC è equivalente ma meno pratica da calcolare.","Stessa ordinata: retta orizzontale, caso particolare."]},
+  {id:"pc13",cat:"Piano Cartesiano",type:"T",
+   q:"Il punto simmetrico di P(x,y) rispetto all'origine O è:",
+   opts:["(−x,−y)","(x,−y)","(−x,y)","(y,x)"],
+   ans:0,why:"La simmetria rispetto all'origine inverte il segno di entrambe le coordinate.",
+   wr:["(x,−y): questa è la simmetria rispetto all'asse x.","(−x,y): simmetria rispetto all'asse y.","(y,x): scambio delle coordinate, non simmetria rispetto a O."]},
+  {id:"pc14",cat:"Piano Cartesiano",type:"T",
+   q:"Il punto simmetrico di P(x,y) rispetto all'asse x è:",
+   opts:["(x,−y)","(−x,y)","(−x,−y)","(y,x)"],
+   ans:0,why:"La simmetria rispetto all'asse x conserva l'ascissa e cambia segno all'ordinata.",
+   wr:["(−x,y): simmetria rispetto all'asse y.","(−x,−y): simmetria rispetto all'origine.","(y,x): scambio, non simmetria."]},
+  {id:"pc15",cat:"Piano Cartesiano",type:"T",
+   q:"La distanza di un punto P(x,y) dall'asse y è:",
+   opts:["|x|","|y|","√(x²+y²)","x"],
+   ans:0,why:"La distanza dall'asse y è la distanza orizzontale: vale |x|, il valore assoluto dell'ascissa.",
+   wr:["|y| è la distanza dall'asse x.","√(x²+y²) è la distanza dall'origine.","x senza valore assoluto può essere negativo."]},
+  /* ── Piano Cartesiano · 10 Numerici ────────────────── */
+  {id:"pc2",cat:"Piano Cartesiano",type:"N",
+   q:"Calcola d(A,B) con A(0,0) e B(3,4).",
+   opts:["5","7","√7","12"],
+   ans:0,why:"d=√(9+16)=√25=5. Triangolo pitagorico 3-4-5.",
+   wr:["7=Δx+Δy, non distanza.","√7≈2.6: errato.","12=Δx·Δy."]},
+  {id:"pc4",cat:"Piano Cartesiano",type:"N",
+   q:"Punto medio di A(−2,4) e B(6,−2)?",
+   opts:["M(2,1)","M(4,2)","M(2,2)","M(1,3)"],
+   ans:0,why:"x_M=(−2+6)/2=2, y_M=(4−2)/2=1 → M(2,1).",
+   wr:["y_M≠2.","Coordinate scambiate.","x_M=2, non 1."]},
+  {id:"pc6",cat:"Piano Cartesiano",type:"N",
+   q:"Perimetro del triangolo A(0,0), B(4,0), C(0,3)?",
+   opts:["12","7","5","14"],
+   ans:0,why:"AB=4, CA=3, BC=√(16+9)=5 → p=12.",
+   wr:["7=AB+CA senza BC.","5 è solo BC.","14 errato."]},
+  {id:"pc8",cat:"Piano Cartesiano",type:"N",
+   q:"Distanza tra A(1,2) e B(4,6)?",
+   opts:["5","7","√7","3"],
+   ans:0,why:"Δx=3, Δy=4 → d=√(9+16)=5.",
+   wr:["7=Δx+Δy.","√7 errato.","3 è solo Δx."]},
+  {id:"pc10",cat:"Piano Cartesiano",type:"N",
+   q:"M(3,−1) è il punto medio di A(1,3) e B(?,?)?",
+   opts:["B(5,−5)","B(4,−4)","B(2,−2)","B(6,−4)"],
+   ans:0,why:"x_B=2·3−1=5; y_B=2·(−1)−3=−5 → B(5,−5).",
+   wr:["x_B≠4.","x_B≠2.","y_B≠−4."]},
+  {id:"pc16",cat:"Piano Cartesiano",type:"N",
+   q:"Area del triangolo A(0,0), B(6,0), C(0,4)?",
+   opts:["12","24","10","8"],
+   ans:0,why:"base=6, altezza=4 → Area=(6×4)/2=12.",
+   wr:["24=base×altezza (senza /2).","10 errato.","8 errato."]},
+  {id:"pc17",cat:"Piano Cartesiano",type:"N",
+   q:"I punti A(0,0), B(2,4), C(1,2) sono collineari?",
+   opts:["Sì","No, formano un triangolo","Impossibile saperlo","Solo A e B lo sono"],
+   ans:0,why:"Area=|0(4−2)+2(2−0)+1(0−4)|/2=|0+4−4|/2=0 → collineari. Verifica: C sta su y=2x.",
+   wr:["Area≠0 solo se non collineari.","Sempre possibile verificare con l'area.","La collinearità coinvolge tutti e tre."]},
+  {id:"pc18",cat:"Piano Cartesiano",type:"N",
+   q:"Simmetrico di P(3,−1) rispetto all'asse y?",
+   opts:["(−3,−1)","(3,1)","(−3,1)","(1,−3)"],
+   ans:0,why:"Rispetto all'asse y: x→−x, y→y → (−3,−1).",
+   wr:["(3,1): simmetria rispetto all'asse x.","(−3,1): cambia anche y.","(1,−3): scambio coordinate."]},
+  {id:"pc19",cat:"Piano Cartesiano",type:"N",
+   q:"Simmetrico di P(2,−3) rispetto all'origine?",
+   opts:["(−2,3)","(2,3)","(−2,−3)","(3,−2)"],
+   ans:0,why:"Rispetto a O: (x,y)→(−x,−y) → (−2,3).",
+   wr:["(2,3): cambia solo y.","(−2,−3): è il simmetrico rispetto all'asse y poi x.","(3,−2): scambio coordinate."]},
+  {id:"pc20",cat:"Piano Cartesiano",type:"N",
+   q:"Distanza di P(5,12) dall'origine?",
+   opts:["13","17","√17","7"],
+   ans:0,why:"d=√(25+144)=√169=13. Triangolo 5-12-13.",
+   wr:["17=5+12.","√17≈4.1 errato.","7=12−5."]},
+  /* ── La Retta · 10 Teorici ──────────────────────────── */
+  {id:"r1",cat:"La Retta",type:"T",
+   q:"In y=mx+q, cosa rappresenta q?",
+   opts:["La pendenza","L'intercetta con l'asse y","L'intercetta con l'asse x","Il coefficiente di x²"],
+   ans:1,why:"q è il valore di y per x=0: il punto in cui la retta taglia l'asse y.",
+   wr:["m è la pendenza.","L'intercetta con l'asse x si trova ponendo y=0.","Le rette non hanno x²."]},
+  {id:"r3",cat:"La Retta",type:"T",
+   q:"Due rette sono parallele se e solo se:",
+   opts:["Hanno la stessa intercetta q","Hanno la stessa pendenza m","Si intersecano in un punto","Sono perpendicolari"],
+   ans:1,why:"Rette parallele: m₁=m₂ ma q₁≠q₂.",
+   wr:["Stessa q e stessa m → coincidenti.","Rette che si intersecano non sono parallele.","Perpendicolari si intersecano."]},
+  {id:"r5",cat:"La Retta",type:"T",
+   q:"La condizione di perpendicolarità tra due rette è:",
+   opts:["m₁=m₂","m₁+m₂=0","m₁·m₂=−1","m₁·m₂=1"],
+   ans:2,why:"m₁·m₂=−1: le pendenze sono reciproche opposte.",
+   wr:["m₁=m₂: parallelismo.","m₁+m₂=0: pendenze opposte, non perpendicolari.","m₁·m₂=1: non è la condizione."]},
+  {id:"r7",cat:"La Retta",type:"T",
+   q:"Quante rette passano per due punti distinti?",
+   opts:["Infinite","Nessuna","Una sola","Due"],
+   ans:2,why:"Per due punti distinti passa una sola retta: postulato della geometria euclidea.",
+   wr:["Infinite: solo per un punto solo.","Esiste sempre almeno una.","Non due: è unica."]},
+  {id:"r9",cat:"La Retta",type:"T",
+   q:"Qual è la forma implicita generale di una retta?",
+   opts:["y=mx+q","ax+by+c=0","y−y₀=m(x−x₀)","y=k"],
+   ans:1,why:"ax+by+c=0 include anche le rette verticali (b=0).",
+   wr:["Forma esplicita, esclude verticali.","Forma punto-pendenza.","Retta orizzontale, caso particolare."]},
+  {id:"r11",cat:"La Retta",type:"T",
+   q:"Come si trova l'intercetta sull'asse x di y=mx+q?",
+   opts:["Poni y=0 e risolvi per x","Poni x=0","Calcola m","Calcola q/m"],
+   ans:0,why:"Sull'asse x: y=0 → 0=mx+q → x=−q/m.",
+   wr:["x=0 dà l'intercetta sull'asse y.","m è la pendenza, non l'intercetta.","q/m è uguale a −x_intercetta senza segno."]},
+  {id:"r12",cat:"La Retta",type:"T",
+   q:"La retta x=k (k costante) è:",
+   opts:["Una retta verticale senza pendenza definita","Una retta con pendenza k","Una retta orizzontale","Una parabola"],
+   ans:0,why:"x=k è verticale, parallela all'asse y. Δx=0 → pendenza non definita.",
+   wr:["La pendenza sarebbe Δy/Δx, ma Δx=0.","y=k è l'orizzontale.","Le parabole hanno x²." ]},
+  {id:"r13",cat:"La Retta",type:"T",
+   q:"L'equazione della retta per l'origine con pendenza m è:",
+   opts:["y=mx","y=m","x=m","y=mx+m"],
+   ans:0,why:"Passando per O(0,0): 0=m·0+q → q=0 → y=mx.",
+   wr:["y=m: retta orizzontale.","x=m: verticale.","y=mx+m: passa per (0,m), non per l'origine."]},
+  {id:"r14",cat:"La Retta",type:"T",
+   q:"La distanza del punto P(x₀,y₀) dalla retta ax+by+c=0 è:",
+   opts:["|ax₀+by₀+c|/√(a²+b²)","|ax₀+by₀+c|","√(a²+b²)","(ax₀+by₀+c)²"],
+   ans:0,why:"Il denominatore √(a²+b²) normalizza per la lunghezza del vettore normale alla retta.",
+   wr:["|ax₀+by₀+c| manca la normalizzazione.","√(a²+b²) è il denominatore, non la distanza.","Il quadrato non è una distanza."]},
+  {id:"r15",cat:"La Retta",type:"T",
+   q:"Il fascio proprio di rette con centro P(x₀,y₀) è:",
+   opts:["L'insieme di tutte le rette passanti per P","Le rette con stessa pendenza","Le rette parallele a una data","Le rette per l'origine"],
+   ans:0,why:"Il fascio proprio di centro P è la famiglia di tutte le rette passanti per un punto fisso P.",
+   wr:["Stessa pendenza: fascio improprio (parallele).","Fascio improprio: parallele.","Solo il caso particolare P=O."]},
+  /* ── La Retta · 10 Numerici ─────────────────────────── */
+  {id:"r2",cat:"La Retta",type:"N",
+   q:"Pendenza della retta y=3x−5?",
+   opts:["3","−5","5","−3"],
+   ans:0,why:"m=3 (coefficiente di x).",
+   wr:["−5 è q.","5=|q|.","−3: segno sbagliato."]},
+  {id:"r4",cat:"La Retta",type:"N",
+   q:"Equazione della retta per A(0,2) e B(2,6)?",
+   opts:["y=2x+2","y=2x−2","y=3x+2","y=x+2"],
+   ans:0,why:"m=(6−2)/(2−0)=2; q=2 → y=2x+2.",
+   wr:["q≠−2.","m≠3.","m≠1."]},
+  {id:"r6",cat:"La Retta",type:"N",
+   q:"Distanza di P(0,0) dalla retta 3x+4y−10=0?",
+   opts:["2","10","5","8"],
+   ans:0,why:"d=|−10|/√(9+16)=10/5=2.",
+   wr:["10 è solo il numeratore.","5 è il denominatore.","8 errato."]},
+  {id:"r8",cat:"La Retta",type:"N",
+   q:"Retta con m=−2 per (1,3): valore di q?",
+   opts:["5","1","−1","−5"],
+   ans:0,why:"3=−2·1+q → q=5.",
+   wr:["q=1: errore algebrico.","q=−1: segno sbagliato.","q=−5: sbagliato."]},
+  {id:"r10",cat:"La Retta",type:"N",
+   q:"Le rette y=2x+1 e y=−x/2+3 sono:",
+   opts:["Parallele","Perpendicolari","Coincidenti","Incidenti non perp."],
+   ans:1,why:"m₁·m₂=2·(−1/2)=−1: perpendicolari.",
+   wr:["Parallele: m₁=m₂.","Coincidenti: stessa equazione.","Prodotto=−1 → perpendicolari."]},
+  {id:"r16",cat:"La Retta",type:"N",
+   q:"Intercetta sull'asse x di y=2x−6?",
+   opts:["x=3","x=−3","x=6","x=−6"],
+   ans:0,why:"y=0 → 2x=6 → x=3.",
+   wr:["x=−3: segno sbagliato.","x=6 è −q, non −q/m.","x=−6 errato."]},
+  {id:"r17",cat:"La Retta",type:"N",
+   q:"Pendenza della retta perpendicolare a y=−3x+2?",
+   opts:["1/3","−1/3","3","−3"],
+   ans:0,why:"m₁=−3 → m₂=−1/m₁=1/3.",
+   wr:["−1/3: segno sbagliato.","3=−m₁, non −1/m₁.","−3=m₁, non la perpendicolare."]},
+  {id:"r18",cat:"La Retta",type:"N",
+   q:"Distanza tra le rette parallele y=2x+1 e y=2x−3?",
+   opts:["4/√5","4","2","√5"],
+   ans:0,why:"Forma implicita: 2x−y+1=0 e 2x−y−3=0. d=|1−(−3)|/√(4+1)=4/√5.",
+   wr:["4 è il numeratore prima della divisione.","2=|Δq|/2 errato.","√5 è solo il denominatore."]},
+  {id:"r19",cat:"La Retta",type:"N",
+   q:"La retta y=x+3 interseca l'asse x in A e l'asse y in B. Punto medio di AB?",
+   opts:["(−3/2, 3/2)","(3/2,−3/2)","(0,3)","(−3,0)"],
+   ans:0,why:"A(−3,0), B(0,3). M=(−3/2, 3/2).",
+   wr:["Coordinate scambiate.","B è un estremo, non il medio.","A è un estremo, non il medio."]},
+  {id:"r20",cat:"La Retta",type:"N",
+   q:"Retta per A(1,2) e B(3,2): equazione?",
+   opts:["y=2","x=2","y=x+1","y=2x"],
+   ans:0,why:"A e B hanno ordinata y=2: retta orizzontale y=2, pendenza m=0.",
+   wr:["x=2: verticale; ma le ascisse sono diverse.","y=x+1: m=1 errato.","y=2x: non passa per A(1,2)? 2·1=2 ✓, ma per B? 2·3=6≠2."]},
+  /* ── La Parabola · 10 Teorici ───────────────────────── */
+  {id:"p1",cat:"La Parabola",type:"T",
+   q:"L'asse di simmetria di y=ax²+bx+c è:",
+   opts:["x=−b/(2a)","x=b/(2a)","y=−b/(2a)","x=−b/a"],
+   ans:0,why:"L'asse di simmetria passa per il vertice: x_V=−b/(2a).",
+   wr:["Manca il segno −.","y=... è orizzontale, non verticale.","Manca il fattore 2 al denominatore."]},
+  {id:"p3",cat:"La Parabola",type:"T",
+   q:"La parabola ha 2 zeri (interseca l'asse x in 2 punti distinti) se:",
+   opts:["Δ=0","Δ>0","Δ<0","a>0"],
+   ans:1,why:"Δ=b²−4ac>0: due soluzioni reali distinte.",
+   wr:["Δ=0: un punto (tangente).","Δ<0: nessuna intersezione.","a>0 dà la concavità, non il numero di zeri."]},
+  {id:"p5",cat:"La Parabola",type:"T",
+   q:"Il vertice della parabola è:",
+   opts:["L'intersezione con l'asse y","Il punto di minimo (a>0) o massimo (a<0)","Il punto x=0","Uno zero della funzione"],
+   ans:1,why:"Il vertice è il punto estremale: minimo se a>0, massimo se a<0.",
+   wr:["L'intersezione con y si chiama intercetta y.","x=0 dà y=c, l'intercetta y.","Gli zeri sono le radici, non il vertice."]},
+  {id:"p7",cat:"La Parabola",type:"T",
+   q:"Se a<0 nella parabola y=ax²+bx+c, allora:",
+   opts:["Concava verso l'alto (∪)","Concava verso il basso (∩)","Priva di vertice","Simmetrica rispetto all'asse x"],
+   ans:1,why:"a<0: parabola aperta in basso (∩).",
+   wr:["∪ richiede a>0.","Ogni parabola ha sempre un vertice.","Simmetrica rispetto al proprio asse, non all'asse x."]},
+  {id:"p9",cat:"La Parabola",type:"T",
+   q:"La retta è tangente alla parabola quando il sistema ha:",
+   opts:["Δ>0","Δ=0","Δ<0","Nessuna condizione"],
+   ans:1,why:"Tangente = un solo punto di contatto = Δ=0.",
+   wr:["Δ>0: secante (due intersezioni).","Δ<0: nessuna intersezione.","Il discriminante è la condizione chiave."]},
+  {id:"p11",cat:"La Parabola",type:"T",
+   q:"La forma canonica con vertice V(h,k) è:",
+   opts:["y=a(x−h)²+k","y=ax²+bx+c","y−k=a(x−h)","y=(x−h)²+k"],
+   ans:0,why:"La forma canonica traslata y=a(x−h)²+k mostra direttamente il vertice V(h,k).",
+   wr:["Forma generale: non mostra subito il vertice.","y−k=a(x−h): manca l'elevamento al quadrato.","Manca il coefficiente a davanti al quadrato."]},
+  {id:"p12",cat:"La Parabola",type:"T",
+   q:"La parabola y=a(x−h)²+k ha il vertice:",
+   opts:["V(h,k)","V(−h,−k)","V(h,−k)","V(−h,k)"],
+   ans:0,why:"Per costruzione, il minimo/massimo è in x=h → y=k: V(h,k).",
+   wr:["V(−h,−k): segni sbagliati.","V(h,−k): y_V=k, non −k.","V(−h,k): x_V=h, non −h."]},
+  {id:"p13",cat:"La Parabola",type:"T",
+   q:"Una parabola è tangente all'asse x quando:",
+   opts:["Δ=0","Δ>0","Δ<0","a=0"],
+   ans:0,why:"Tangente all'asse x: un solo punto di contatto con y=0 → Δ=0.",
+   wr:["Δ>0: due intersezioni con l'asse x.","Δ<0: nessuna intersezione.","a=0: non è più una parabola."]},
+  {id:"p14",cat:"La Parabola",type:"T",
+   q:"Il numero massimo di intersezioni tra una retta e una parabola è:",
+   opts:["2","1","3","0"],
+   ans:0,why:"Sostituendo la retta ottieni un'equazione di 2° grado → max 2 soluzioni.",
+   wr:["1: possibile (tangente), ma non il massimo.","3: impossibile per equazione di 2°.","0: possibile, ma non il massimo."]},
+  {id:"p15",cat:"La Parabola",type:"T",
+   q:"Se a>0 e Δ<0, la parabola:",
+   opts:["Sta tutta sopra l'asse x","Sta tutta sotto l'asse x","Interseca l'asse x in 2 punti","È tangente all'asse x"],
+   ans:0,why:"a>0: concava verso l'alto. Δ<0: nessuna radice reale → tutta sopra l'asse x.",
+   wr:["Sotto: richiederebbe a<0 e Δ<0.","2 intersezioni: richiederebbe Δ>0.","Tangente: solo se Δ=0."]},
+  /* ── La Parabola · 10 Numerici ──────────────────────── */
+  {id:"p2",cat:"La Parabola",type:"N",
+   q:"Vertice di y=x²−4x+3?",
+   opts:["V(2,−1)","V(2,3)","V(−2,15)","V(4,3)"],
+   ans:0,why:"x_V=2, y_V=4−8+3=−1.",
+   wr:["y_V≠3.","x_V=2, non −2.","x_V=2, non 4."]},
+  {id:"p4",cat:"La Parabola",type:"N",
+   q:"Discriminante di y=x²−5x+4?",
+   opts:["9","41","−9","25"],
+   ans:0,why:"Δ=25−16=9.",
+   wr:["41=25+16 (somma invece di differenza).","−9: Δ>0 in questo caso.","25=b² senza −4ac."]},
+  {id:"p6",cat:"La Parabola",type:"N",
+   q:"Asse di simmetria di y=2x²−8x+1?",
+   opts:["x=2","x=−2","x=4","x=1"],
+   ans:0,why:"x_V=8/4=2.",
+   wr:["x=−2: risultato positivo.","x=4=b.","x=1 errato."]},
+  {id:"p8",cat:"La Parabola",type:"N",
+   q:"Intersezioni di y=x²−4 con l'asse x?",
+   opts:["x=±2","x=2 solo","x=±4","x=0"],
+   ans:0,why:"x²=4 → x=±2.",
+   wr:["Due soluzioni.","√4=2, non 4.","y(0)=−4≠0."]},
+  {id:"p10",cat:"La Parabola",type:"N",
+   q:"Per quale k la retta y=x+k è tangente a y=x²?",
+   opts:["k=−1/4","k=1/4","k=1","k=0"],
+   ans:0,why:"Δ=1+4k=0 → k=−1/4.",
+   wr:["k=1/4: Δ=2>0.","k=1: Δ=5>0.","k=0: Δ=1>0."]},
+  {id:"p16",cat:"La Parabola",type:"N",
+   q:"Vertice di y=2(x−3)²−1?",
+   opts:["V(3,−1)","V(−3,1)","V(3,1)","V(−3,−1)"],
+   ans:0,why:"Forma canonica y=a(x−h)²+k: h=3, k=−1.",
+   wr:["Segni sbagliati.","y_V=−1, non 1.","x_V=3, non −3."]},
+  {id:"p17",cat:"La Parabola",type:"N",
+   q:"Quante intersezioni con l'asse x ha y=x²+2x+5?",
+   opts:["0 (Δ<0)","1 (Δ=0)","2 (Δ>0)","Dipende da a"],
+   ans:0,why:"Δ=4−20=−16<0: nessuna intersezione.",
+   wr:["1: richiederebbe Δ=0.","2: richiederebbe Δ>0.","a=1>0 e Δ<0: caso determinato."]},
+  {id:"p18",cat:"La Parabola",type:"N",
+   q:"Valore di a per cui y=ax²−2x+1 è tangente all'asse x?",
+   opts:["a=1","a=−1","a=2","a=0"],
+   ans:0,why:"Δ=4−4a=0 → a=1.",
+   wr:["a=−1: Δ=4+4=8>0.","a=2: Δ=4−8<0 (nessuna intersezione).","a=0: non è una parabola."]},
+  {id:"p19",cat:"La Parabola",type:"N",
+   q:"Somma delle radici di x²−5x+6=0 (per Vieta)?",
+   opts:["5","6","−5","1"],
+   ans:0,why:"x₁+x₂=−b/a=5. Verifica: (x−2)(x−3), 2+3=5.",
+   wr:["6=x₁·x₂ (prodotto, non somma).","−5: manca il segno −b.","1=a, non la somma."]},
+  {id:"p20",cat:"La Parabola",type:"N",
+   q:"Prodotto delle radici di x²−5x+6=0 (per Vieta)?",
+   opts:["6","5","−6","30"],
+   ans:0,why:"x₁·x₂=c/a=6. Verifica: 2·3=6.",
+   wr:["5=x₁+x₂ (somma).","−6: c=6>0.","30=5·6 errato."]},
+  /* ── Le Coniche · 10 Teorici ────────────────────────── */
+  {id:"cn1",cat:"Le Coniche",type:"T",
+   q:"L'equazione della circonferenza con centro O(0,0) e raggio r è:",
+   opts:["x²+y²=r²","x²+y²=r","x+y=r","x²−y²=r²"],
+   ans:0,why:"d(P,O)=r → √(x²+y²)=r → x²+y²=r².",
+   wr:["x²+y²=r: manca l'elevamento al quadrato di r.","x+y=r: non è la distanza.","x²−y²=r²: è un'iperbole, non una circonferenza."]},
+  {id:"cn2",cat:"Le Coniche",type:"T",
+   q:"Il centro della circonferenza (x−a)²+(y−b)²=r² è:",
+   opts:["C(a,b)","C(−a,−b)","C(a,−b)","C(−a,b)"],
+   ans:0,why:"Il centro è il punto (a,b) che azzera entrambi i quadrati.",
+   wr:["C(−a,−b): segni sbagliati.","C(a,−b): y è b, non −b.","C(−a,b): x è a, non −a."]},
+  {id:"cn3",cat:"Le Coniche",type:"T",
+   q:"Per portare x²+y²+Dx+Ey+F=0 in forma canonica si usa:",
+   opts:["Il completamento del quadrato","La formula quadratica","Il discriminante","La sostituzione t=x+y"],
+   ans:0,why:"Si completa il quadrato in x e in y separatamente per ottenere (x−a)²+(y−b)²=r².",
+   wr:["La formula quadratica risolve equazioni, non trasforma in forma canonica.","Il discriminante serve per il numero di zeri.","La sostituzione t=x+y non porta alla forma canonica."]},
+  {id:"cn4",cat:"Le Coniche",type:"T",
+   q:"L'ellisse x²/a²+y²/b²=1 con a>b>0 ha i fuochi su:",
+   opts:["L'asse x","L'asse y","L'origine","Le bisettrici"],
+   ans:0,why:"Con a>b: fuochi F(±c,0) sull'asse x, con c=√(a²−b²).",
+   wr:["Asse y: solo se b>a.","L'origine: i fuochi sono simmetrici rispetto a O.","Le bisettrici non c'entrano."]},
+  {id:"cn5",cat:"Le Coniche",type:"T",
+   q:"Gli asintoti dell'iperbole x²/a²−y²/b²=1 sono:",
+   opts:["y=±(b/a)x","y=±(a/b)x","y=±a","y=±b"],
+   ans:0,why:"Gli asintoti dell'iperbole sono y=±(b/a)x.",
+   wr:["y=±(a/b)x: a e b scambiati.","y=±a: costanti, non rette con pendenza.","y=±b: costanti."]},
+  {id:"cn6",cat:"Le Coniche",type:"T",
+   q:"L'asintoto verticale di y=(ax+b)/(cx+d) è:",
+   opts:["x=−d/c","x=d/c","x=a/c","x=−b/a"],
+   ans:0,why:"Il denominatore cx+d=0 → x=−d/c.",
+   wr:["x=d/c: manca il segno −.","x=a/c: è l'asintoto orizzontale.","x=−b/a: annulla il numeratore."]},
+  {id:"cn7",cat:"Le Coniche",type:"T",
+   q:"L'asintoto orizzontale di y=(ax+b)/(cx+d) è:",
+   opts:["y=a/c","y=b/d","y=d/c","y=a/b"],
+   ans:0,why:"Per x→∞: y→ax/cx=a/c.",
+   wr:["y=b/d: termini noti, non i coefficienti di x.","y=d/c: è legato all'asintoto verticale.","y=a/b: mescola coefficienti."]},
+  {id:"cn8",cat:"Le Coniche",type:"T",
+   q:"L'ellisse traslata con centro C(h,k) ha equazione:",
+   opts:["(x−h)²/a²+(y−k)²/b²=1","x²/a²+y²/b²=1","(x+h)²/a²+(y+k)²/b²=1","(x−h)²/(a−h)²+(y−k)²/(b−k)²=1"],
+   ans:0,why:"La traslazione sostituisce x→(x−h) e y→(y−k).",
+   wr:["Ellisse centrata in O.","(x+h)²: porta a centro (−h,−k).","I semi-assi a e b non cambiano con la traslazione."]},
+  {id:"cn9",cat:"Le Coniche",type:"T",
+   q:"Una retta è tangente a una circonferenza se:",
+   opts:["La distanza dal centro = raggio","La distanza dal centro < raggio","La distanza dal centro > raggio","Passa per il centro"],
+   ans:0,why:"d(C,retta)=r: un solo punto di tangenza.",
+   wr:["d<r: retta secante (2 intersezioni).","d>r: retta esterna (0 intersezioni).","La retta per il centro è una corda diametrale."]},
+  {id:"cn10",cat:"Le Coniche",type:"T",
+   q:"Per l'iperbole c²=a²+b² mentre per l'ellisse c²=:",
+   opts:["a²−b²","a²+b²","b²−a²","a·b"],
+   ans:0,why:"Per l'ellisse c²=a²−b² (con a>b>0), diverso dall'iperbole dove c²=a²+b².",
+   wr:["a²+b²: vale per l'iperbole.","b²−a²: negativo se a>b, non valido.","a·b: non è la formula corretta."]},
+  /* ── Le Coniche · 10 Numerici ───────────────────────── */
+  {id:"cn11",cat:"Le Coniche",type:"N",
+   q:"Raggio della circonferenza x²+y²=25?",
+   opts:["5","25","√5","10"],
+   ans:0,why:"r²=25 → r=5.",
+   wr:["25=r², non r.","√5≈2.24: √25=5.","10=2r."]},
+  {id:"cn12",cat:"Le Coniche",type:"N",
+   q:"Centro e raggio di (x−3)²+(y+2)²=16?",
+   opts:["C(3,−2), r=4","C(−3,2), r=4","C(3,−2), r=16","C(3,2), r=4"],
+   ans:0,why:"Centro C(3,−2); r²=16→r=4.",
+   wr:["C(−3,2): segni sbagliati.","r=16=r², non r.","y: (y+2)=(y−(−2)), quindi k=−2."]},
+  {id:"cn13",cat:"Le Coniche",type:"N",
+   q:"Semi-asse maggiore di x²/25+y²/9=1?",
+   opts:["5","3","√25","9"],
+   ans:0,why:"a²=25→a=5 (denominatore maggiore, asse x).",
+   wr:["3=b (semi-asse minore).","√25=5: corretto ma opzione ambigua; la risposta è 5.","9=b²."]},
+  {id:"cn14",cat:"Le Coniche",type:"N",
+   q:"Asintoti dell'iperbole x²/4−y²/9=1?",
+   opts:["y=±(3/2)x","y=±(2/3)x","y=±3x","y=±2x"],
+   ans:0,why:"a=2, b=3 → y=±(b/a)x=±(3/2)x.",
+   wr:["y=±(2/3)x: a e b scambiati.","y=±3x: solo b.","y=±2x: solo a."]},
+  {id:"cn15",cat:"Le Coniche",type:"N",
+   q:"Asintoto verticale di y=(2x+1)/(x−3)?",
+   opts:["x=3","x=−3","x=2","x=1/2"],
+   ans:0,why:"x−3=0 → x=3.",
+   wr:["x=−3: segno sbagliato.","x=2: coefficiente di x al numeratore.","x=1/2: annulla il numeratore, non il denominatore."]},
+  {id:"cn16",cat:"Le Coniche",type:"N",
+   q:"Asintoto orizzontale di y=(2x+1)/(x−3)?",
+   opts:["y=2","y=1","y=−1/3","y=3"],
+   ans:0,why:"y=a/c=2/1=2.",
+   wr:["y=1: termine noto del numeratore.","y=−1/3: valore in x=0.","y=3: asintoto verticale."]},
+  {id:"cn17",cat:"Le Coniche",type:"N",
+   q:"Centro della circonferenza x²+y²−6x+4y−3=0?",
+   opts:["C(3,−2)","C(−3,2)","C(6,−4)","C(3,2)"],
+   ans:0,why:"Completamento: (x−3)²+(y+2)²=16. Centro C(3,−2).",
+   wr:["C(−3,2): segni sbagliati.","C(6,−4): sono D e E, non il centro.","y: (y+2)²→k=−2."]},
+  {id:"cn18",cat:"Le Coniche",type:"N",
+   q:"Raggio della circonferenza x²+y²−6x+4y−3=0?",
+   opts:["4","16","3","√3"],
+   ans:0,why:"r²=9+4+3=16 → r=4.",
+   wr:["16=r².","3=√(D/2)² sbagliato.","√3: r=4, non √3."]},
+  {id:"cn19",cat:"Le Coniche",type:"N",
+   q:"Centro dell'ellisse (x−2)²/16+(y+1)²/9=1?",
+   opts:["C(2,−1)","C(−2,1)","C(2,1)","C(4,3)"],
+   ans:0,why:"h=2, k=−1 → C(2,−1).",
+   wr:["Segni sbagliati.","k=−1, non 1.","4=a, 3=b: semi-assi, non centro."]},
+  {id:"cn20",cat:"Le Coniche",type:"N",
+   q:"Centro dell'iperbole (x+1)²/9−(y−2)²/4=1?",
+   opts:["C(−1,2)","C(1,−2)","C(3,2)","C(−1,−2)"],
+   ans:0,why:"(x+1)²=(x−(−1))²→h=−1; (y−2)²→k=2. C(−1,2).",
+   wr:["C(1,−2): segni sbagliati.","C(3,2): 3=a, non h.","C(−1,−2): k=2, non −2."]},
+];
+
+>>>>>>> Stashed changes
 /* ── MAIN COMPONENT ──────────────────────────────────── */
+
 export default function App(){
   const [view,setView]=useState("list");
   const [selId,setSelId]=useState(null);
@@ -611,6 +1337,7 @@ export default function App(){
 
   const FigComp=card?FIGS[card.id]:null;
 
+<<<<<<< Updated upstream
   if(view==="list") return(
     <div style={{minHeight:"100vh",background:"#f8f7f4",fontFamily:"Georgia,'Times New Roman',serif"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');*{box-sizing:border-box}.cb{transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}.cb:hover{transform:translateY(-2px)}.fb{cursor:pointer;border:2px solid #d1d5db;background:white;border-radius:20px;padding:6px 14px;font-family:Georgia,serif;font-size:13px;color:#374151;transition:all .15s;white-space:nowrap}.fb.act{background:#1e293b;color:white;border-color:#1e293b}.fb:hover:not(.act){background:#f1f5f9}`}</style>
@@ -623,6 +1350,50 @@ export default function App(){
             <div style={{width:`${pct}%`,height:"100%",background:"#fbbf24",borderRadius:4,transition:"width .5s"}}/>
           </div>
           <span style={{fontSize:13,color:"#fde68a",whiteSpace:"nowrap"}}>{done.size}/{CARDS.length}</span>
+=======
+  const NAV=[
+    {key:"home",   label:"Home",          icon:"🏠"},
+    {key:"Piano Cartesiano", label:"Piano Cart.", icon:"📍"},
+    {key:"La Retta",         label:"La Retta",   icon:"📏"},
+    {key:"La Parabola",      label:"La Parabola",icon:"⤴️"},
+    {key:"Le Coniche",       label:"Le Coniche", icon:"⭕"},
+    {key:"quiz",   label:"Quiz",          icon:"🧠"},
+  ];
+  const SEC_DESC={
+    "Piano Cartesiano":"Distanza tra punti, punto medio, perimetro e riconoscimento di figure.",
+    "La Retta":"Equazioni, pendenza, rette parallele e perpendicolari, distanza punto-retta.",
+    "La Parabola":"Vertice, asse di simmetria, intersezioni, tangenza e parabola per tre punti.",
+    "Le Coniche":"Circonferenza, ellisse, iperbole e funzione omografica con assi paralleli agli assi cartesiani.",
+  };
+
+  const isNavActive=(key)=>navSection===key&&view==="list";
+  const SF=`font-family:system-ui,-apple-system,sans-serif`;
+  const BASE_STYLE=`*{box-sizing:border-box}body{margin:0}
+    .btn-nav{border:none;background:transparent;cursor:pointer;transition:all .15s;font-family:system-ui,sans-serif}
+    .btn-nav:hover{background:rgba(255,255,255,.18)!important}
+    .card-hover{transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+    .card-hover:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.12)!important}
+    .opt-btn{cursor:pointer;transition:all .2s;text-align:left;font-family:system-ui,sans-serif}
+    .opt-btn:hover:not(:disabled){filter:brightness(.96)}
+    .action-btn{cursor:pointer;border:none;font-family:system-ui,sans-serif;font-weight:600;transition:all .15s}
+    .action-btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+    .hint-btn{cursor:pointer;border:none;background:#fef9c3;border-radius:8px;padding:7px 14px;font-family:system-ui,sans-serif;font-size:13px;color:#854d0e;transition:background .15s}
+    .hint-btn:hover{background:#fef08a}`;
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  const Header=({back,backLabel,title,subtitle})=>(
+    <div style={{background:"#2563eb",color:"white"}}>
+      <div style={{padding:"14px 16px 0",maxWidth:960,margin:"0 auto",display:"flex",alignItems:"center",gap:10}}>
+        {back&&<button onClick={back} style={{border:"none",background:"rgba(255,255,255,.15)",color:"white",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"system-ui,sans-serif",fontSize:13,display:"flex",alignItems:"center",gap:5}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>{backLabel}
+        </button>}
+        <div style={{flex:1}}>
+          <h1 style={{margin:0,fontSize:back?"16px":"clamp(17px,3.5vw,24px)",fontWeight:700,fontFamily:"system-ui,sans-serif",lineHeight:1.2}}>
+            {title||"📐 Piano Cartesiano"}
+          </h1>
+          {subtitle&&<p style={{margin:"2px 0 0",fontSize:12,opacity:.8,fontFamily:"system-ui,sans-serif"}}>{subtitle}</p>}
+          {!back&&<p style={{margin:"2px 0 0",fontSize:12,opacity:.8,fontFamily:"system-ui,sans-serif"}}>Geometria analitica · schede, figure & quiz</p>}
+>>>>>>> Stashed changes
         </div>
       </div>
       <div style={{padding:"14px 14px 6px",display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none"}}>
