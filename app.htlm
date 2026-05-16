@@ -787,7 +787,6 @@ const CARDS=[
       {ti:"Verifica del passaggio per T",tx:"T(1, 3):  y = −1/2 + 7/2 = 6/2 = 3 ✓",hi:"La verifica per T dovrebbe essere automatica per costruzione."}
     ]},
 
-  ,
   /* ── Le Coniche ── */
   {id:17,title:"Circonferenza centrata nell'origine",cat:"Le Coniche",diff:1,
    stmt:"La circonferenza con centro O(0,0) e raggio r è il luogo dei punti del piano a distanza r dall'origine. La sua equazione è x²+y²=r².",
