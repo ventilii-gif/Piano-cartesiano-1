@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, Component } from "react";
 
 const TR = "all 0.4s ease";
 const hi  = (on, c="#ef4444", off="#cbd5e1") => on ? c : off;
@@ -1305,26 +1305,63 @@ const QUIZZES=[
 
 /* ── MAIN COMPONENT ──────────────────────────────────── */
 
-export default function App(){
+/* ── ERROR BOUNDARY ──────────────────────────────────── */
+class EB extends Component{
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(e){return{err:e};}
+  render(){
+    if(this.state.err)return(
+      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",
+        justifyContent:"center",fontFamily:"system-ui,sans-serif",padding:24,textAlign:"center",
+        background:"#f0f4f8"}}>
+        <div style={{fontSize:64,marginBottom:16}}>⚠️</div>
+        <h2 style={{color:"#dc2626",marginBottom:8,fontSize:22}}>Qualcosa è andato storto</h2>
+        <p style={{color:"#6b7280",marginBottom:4,maxWidth:400,lineHeight:1.6}}>{this.state.err.message}</p>
+        <p style={{color:"#9ca3af",fontSize:13,marginBottom:24}}>
+          I tuoi progressi sono salvati. Ricarica per riprendere.
+        </p>
+        <button onClick={()=>window.location.reload()}
+          style={{background:"#2563eb",color:"white",border:"none",borderRadius:10,
+            padding:"12px 28px",cursor:"pointer",fontSize:15,fontWeight:600}}>
+          🔄 Ricarica la pagina
+        </button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
+/* ── APP ─────────────────────────────────────────────── */
+function AppInner(){
+  const [done,setDone]=useState(()=>{
+    try{const s=localStorage.getItem('pc_done');return s?new Set(JSON.parse(s)):new Set();}
+    catch{return new Set();}
+  });
+  const [qAnswers,setQAnswers]=useState(()=>{
+    try{return JSON.parse(localStorage.getItem('pc_qa')||'{}');}
+    catch{return {};}
+  });
+  useEffect(()=>{try{localStorage.setItem('pc_done',JSON.stringify([...done]));}catch{}},[done]);
+  useEffect(()=>{try{localStorage.setItem('pc_qa',JSON.stringify(qAnswers));}catch{}},[qAnswers]);
+
   const [view,setView]=useState("list");
   const [navSection,setNavSection]=useState("home");
   const [selId,setSelId]=useState(null);
   const [step,setStep]=useState(0);
   const [hint,setHint]=useState(false);
-  const [done,setDone]=useState(new Set());
   const [phase,setPhase]=useState("enunciato");
   const [selQid,setSelQid]=useState(null);
-  const [qAnswers,setQAnswers]=useState({});
+  const [qSection,setQSection]=useState(null);
 
   const card=CARDS.find(c=>c.id===selId);
   const quiz=QUIZZES.find(q=>q.id===selQid);
   const sectionCards=navSection==="home"||navSection==="quiz"?CARDS:CARDS.filter(c=>c.cat===navSection);
-  const sectionQuizzes=navSection==="home"||navSection==="quiz"?QUIZZES:QUIZZES.filter(q=>q.cat===navSection);
   const pct=Math.round(done.size/CARDS.length*100);
   const qCorrect=QUIZZES.filter(q=>qAnswers[q.id]===q.ans).length;
 
   const openCard=(id)=>{setSelId(id);setStep(0);setHint(false);setPhase("enunciato");setView("detail");};
-  const goNav=(sec)=>{setNavSection(sec);setView("list");};
+  const goNav=(sec)=>{setQSection(null);setNavSection(sec);setView("list");};
+  const openSectionQuiz=(cat)=>{setQSection(cat);setNavSection("quiz");setView("list");};
   const next=()=>{
     if(!card)return;
     if(phase==="enunciato"){setPhase("steps");setStep(0);setHint(false);return;}
@@ -1339,6 +1376,8 @@ export default function App(){
   const answer=(qid,idx)=>{if(qAnswers[qid]===undefined)setQAnswers(p=>({...p,[qid]:idx}));};
   const FigComp=card?FIGS[card.id]:null;
 
+  const ALL_CATS=["Piano Cartesiano","La Retta","La Parabola","Le Coniche"];
+  const CAT_SHORT={"Piano Cartesiano":"PIANO CART.","La Retta":"LA RETTA","La Parabola":"LA PARABOLA","Le Coniche":"LE CONICHE"};
   const NAV=[
     {key:"home",   label:"Home",          icon:"🏠"},
     {key:"Piano Cartesiano", label:"Piano Cart.", icon:"📍"},
@@ -1355,7 +1394,6 @@ export default function App(){
   };
 
   const isNavActive=(key)=>navSection===key&&view==="list";
-  const SF=`font-family:system-ui,-apple-system,sans-serif`;
   const BASE_STYLE=`*{box-sizing:border-box}body{margin:0}
     .btn-nav{border:none;background:transparent;cursor:pointer;transition:all .15s;font-family:system-ui,sans-serif}
     .btn-nav:hover{background:rgba(255,255,255,.18)!important}
@@ -1407,7 +1445,8 @@ export default function App(){
     const chosen=qAnswers[quiz.id];
     const answered=chosen!==undefined;
     const correct=chosen===quiz.ans;
-    const qList=navSection==="quiz"||navSection==="home"?QUIZZES:QUIZZES.filter(q=>q.cat===quiz.cat);
+    const qList=qSection?QUIZZES.filter(q=>q.cat===qSection):
+      navSection==="quiz"||navSection==="home"?QUIZZES:QUIZZES.filter(q=>q.cat===quiz.cat);
     const qIdx=qList.findIndex(q=>q.id===quiz.id);
     const nextQ=qList[qIdx+1];
     const prevQ=qList[qIdx-1];
@@ -1496,6 +1535,7 @@ export default function App(){
     const catTotal=(cat)=>CARDS.filter(c=>c.cat===cat).length;
     const qCatCorrect=(cat)=>QUIZZES.filter(q=>q.cat===cat&&qAnswers[q.id]===q.ans).length;
     const qCatTotal=(cat)=>QUIZZES.filter(q=>q.cat===cat).length;
+    const quizCats=qSection?[qSection]:ALL_CATS;
 
     return(
       <div style={{minHeight:"100vh",background:"#f0f4f8",fontFamily:"system-ui,sans-serif"}}>
@@ -1511,22 +1551,21 @@ export default function App(){
               <p style={{margin:"0 0 8px",fontSize:14,color:"#374151",lineHeight:1.7}}>
                 Studia la <strong>geometria analitica</strong> con schede interattive passo-passo,
                 figure SVG animate e quiz a risposta multipla con feedback immediato.
-                Ogni sezione contiene esercizi guidati e 10 quiz (teorici + numerici).
+                Ogni sezione contiene schede guidate e <strong>20 quiz</strong> (10 teorici + 10 numerici).
               </p>
               <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#15803d"}}>
                 💡 <strong>Suggerimento:</strong> studia la scheda, segui i passi guidati, poi mettiti alla prova con i quiz.
-                I tuoi progressi vengono salvati automaticamente nella sessione.
+                I tuoi progressi vengono salvati anche dopo aver chiuso la pagina.
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,marginBottom:24}}>
-              {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+              {ALL_CATS.map(cat=>{
                 const cc=CC[cat];
                 const nd=catDone(cat),nt=catTotal(cat);
                 return(
                   <button key={cat} className="card-hover" onClick={()=>goNav(cat)}
                     style={{background:"white",border:`1.5px solid #e5e7eb`,borderRadius:12,padding:"18px 16px",
-                      textAlign:"left",boxShadow:"0 1px 4px rgba(0,0,0,.06)",
-                      borderLeft:`4px solid ${cc.acc}`}}>
+                      textAlign:"left",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderLeft:`4px solid ${cc.acc}`}}>
                     <div style={{fontSize:28,marginBottom:8}}>{cc.icon}</div>
                     <div style={{fontSize:15,fontWeight:700,color:cc.acc,marginBottom:4}}>{cat}</div>
                     <div style={{fontSize:12,color:"#6b7280",lineHeight:1.5,marginBottom:10}}>{SEC_DESC[cat]}</div>
@@ -1543,7 +1582,7 @@ export default function App(){
                 <div style={{fontSize:28,marginBottom:8}}>🧠</div>
                 <div style={{fontSize:15,fontWeight:700,color:"#16a34a",marginBottom:4}}>Quiz</div>
                 <div style={{fontSize:12,color:"#6b7280",lineHeight:1.5,marginBottom:10}}>
-                  30 domande teoriche e numeriche con feedback immediato e spiegazione degli errori.
+                  80 domande totali — 20 per sezione, mix teorico e numerico.
                 </div>
                 <div style={{fontSize:11,color:"#9ca3af",marginBottom:4}}>{qCorrect}/{QUIZZES.length} corrette</div>
                 <div style={{height:4,background:"#e5e7eb",borderRadius:2,overflow:"hidden"}}>
@@ -1553,14 +1592,14 @@ export default function App(){
             </div>
             <h3 style={{margin:"0 0 10px",fontSize:16,color:"#374151"}}>📊 I tuoi progressi</h3>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
-              {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+              {ALL_CATS.map(cat=>{
                 const cc=CC[cat],nd=catDone(cat),nt=catTotal(cat);
                 const qc=qCatCorrect(cat),qt=qCatTotal(cat);
                 return(
                   <div key={cat} style={{background:"white",borderRadius:10,padding:"12px",
                     boxShadow:"0 1px 3px rgba(0,0,0,.06)",borderTop:`3px solid ${cc.acc}`}}>
                     <div style={{fontSize:10,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>
-                      {cat.replace("Piano Cartesiano","PIANO CART.").replace("La Retta","LA RETTA").replace("La Parabola","LA PARABOLA")}
+                      {CAT_SHORT[cat]}
                     </div>
                     <div style={{fontSize:13,fontWeight:600,color:nd>0?"#1f2937":"#9ca3af",marginBottom:2}}>
                       {nd===0?"Non svolto":`${nd}/${nt} schede`}
@@ -1584,10 +1623,16 @@ export default function App(){
           {navSection!=="home"&&navSection!=="quiz"&&(<>
             <div style={{background:"white",borderRadius:12,padding:"14px 18px",marginBottom:16,
               borderLeft:`4px solid ${CC[navSection].acc}`,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
-              <p style={{margin:0,fontSize:14,color:"#374151"}}>{SEC_DESC[navSection]}</p>
-              <div style={{marginTop:8,fontSize:12,color:"#6b7280"}}>
-                {catDone(navSection)}/{catTotal(navSection)} schede completate &nbsp;·&nbsp;
-                {qCatCorrect(navSection)}/{qCatTotal(navSection)} quiz corretti
+              <p style={{margin:"0 0 8px",fontSize:14,color:"#374151"}}>{SEC_DESC[navSection]}</p>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                <div style={{fontSize:12,color:"#6b7280"}}>
+                  {catDone(navSection)}/{catTotal(navSection)} schede completate &nbsp;·&nbsp;
+                  {qCatCorrect(navSection)}/{qCatTotal(navSection)} quiz corretti
+                </div>
+                <button className="action-btn" onClick={()=>openSectionQuiz(navSection)}
+                  style={{background:CC[navSection].acc,color:"white",borderRadius:8,padding:"6px 14px",fontSize:12}}>
+                  🧠 Quiz di questa sezione →
+                </button>
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
@@ -1612,12 +1657,19 @@ export default function App(){
           {navSection==="quiz"&&(<>
             <div style={{background:"white",borderRadius:12,padding:"14px 18px",marginBottom:16,
               borderLeft:"4px solid #16a34a",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
-              <p style={{margin:"0 0 4px",fontSize:14,color:"#374151"}}>
-                30 domande a risposta multipla — 10 per sezione, mix teorico e numerico.
+              <p style={{margin:"0 0 6px",fontSize:14,color:"#374151"}}>
+                {qSection?`Quiz di: ${qSection}`:"80 domande totali — 20 per sezione (10 teorici + 10 numerici)."}
               </p>
-              <div style={{fontSize:12,color:"#6b7280"}}>{qCorrect}/{QUIZZES.length} corrette · {Object.keys(qAnswers).length} tentate</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                <div style={{fontSize:12,color:"#6b7280"}}>{qCorrect}/{QUIZZES.length} corrette · {Object.keys(qAnswers).length} tentate</div>
+                {qSection&&<button onClick={()=>setQSection(null)}
+                  style={{fontSize:11,color:"#6b7280",background:"#f3f4f6",border:"none",borderRadius:6,
+                    padding:"4px 10px",cursor:"pointer"}}>
+                  ✕ Tutte le sezioni
+                </button>}
+              </div>
             </div>
-            {["Piano Cartesiano","La Retta","La Parabola"].map(cat=>{
+            {quizCats.map(cat=>{
               const cc=CC[cat];
               const catQ=QUIZZES.filter(q=>q.cat===cat);
               return(
@@ -1664,6 +1716,8 @@ export default function App(){
   const totalP=card.steps.length+2;
   const progV=phase==="enunciato"?1:phase==="done"?totalP:step+2;
   const cur=card.steps[step];
+  const pending=QUIZZES.filter(q=>q.cat===card.cat&&qAnswers[q.id]!==q.ans);
+  const allQuizDone=pending.length===0;
   return(
     <div style={{minHeight:"100vh",background:"#f0f4f8",fontFamily:"system-ui,sans-serif"}}>
       <style>{BASE_STYLE}</style>
@@ -1752,9 +1806,42 @@ export default function App(){
               <div style={{fontSize:10,color:cc.acc,marginBottom:6,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700}}>Risultato:</div>
               <p style={{margin:0,fontSize:14,fontStyle:"italic",color:"#1f2937",lineHeight:1.7}}>{card.tesi}</p>
             </div>
-            <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 16px",marginBottom:20}}>
+            <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 16px",marginBottom:16}}>
               <p style={{margin:0,fontSize:14,color:"#15803d"}}>✅ Schede completate: <strong>{done.size}</strong> / {CARDS.length} ({pct}%)</p>
             </div>
+            {allQuizDone?(
+              <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 16px",marginBottom:16}}>
+                <p style={{margin:0,fontSize:13,color:"#15803d",fontWeight:600}}>🏆 Ottimo! Hai risposto correttamente a tutti i quiz di {card.cat}.</p>
+              </div>
+            ):(
+              <div style={{background:"#fefce8",border:"1px solid #fde68a",borderRadius:10,padding:"14px 16px",marginBottom:16,textAlign:"left"}}>
+                <p style={{margin:"0 0 10px",fontSize:13,color:"#854d0e",fontWeight:600}}>
+                  🧠 Quiz di {card.cat} ancora aperti ({pending.length}):
+                </p>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {pending.slice(0,4).map(q=>{
+                    const isWrong=qAnswers[q.id]!==undefined;
+                    return(
+                      <button key={q.id}
+                        onClick={()=>{setQSection(card.cat);setNavSection("quiz");setSelQid(q.id);setView("quiz");}}
+                        style={{background:"white",border:"1px solid #fde68a",borderRadius:8,padding:"8px 12px",
+                          cursor:"pointer",textAlign:"left",fontSize:12,color:"#374151",display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{background:isWrong?"#fef2f2":"#f3f4f6",color:isWrong?"#dc2626":"#6b7280",
+                          fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:700,whiteSpace:"nowrap"}}>
+                          {isWrong?"❌":"—"} {q.type}
+                        </span>
+                        <span style={{flex:1,lineHeight:1.4}}>{q.q.length>60?q.q.slice(0,60)+"…":q.q}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {pending.length>4&&<p style={{margin:"8px 0 0",fontSize:11,color:"#9ca3af",textAlign:"center"}}>e altri {pending.length-4}…</p>}
+                <button className="action-btn" onClick={()=>openSectionQuiz(card.cat)}
+                  style={{marginTop:10,width:"100%",background:cc.acc,color:"white",borderRadius:8,padding:"9px",fontSize:13}}>
+                  🧠 Vai ai quiz di {card.cat} →
+                </button>
+              </div>
+            )}
             <div style={{display:"flex",gap:8}}>
               <button className="action-btn" onClick={()=>{setPhase("enunciato");setStep(0);setHint(false);}}
                 style={{flex:1,background:"#f3f4f6",color:"#374151",borderRadius:10,padding:"12px",fontSize:14}}>🔄 Rivedi</button>
@@ -1767,3 +1854,5 @@ export default function App(){
     </div>
   );
 }
+
+export default function App(){return <EB><AppInner/></EB>;}
