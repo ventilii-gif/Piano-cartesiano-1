@@ -570,8 +570,8 @@ const Fig24=({step:s,phase})=>{
   return <svg viewBox="0 0 240 190" style={{width:"100%",height:"100%"}}>
     <Axes ox={ox} oy={oy} xMin={-5.5} xMax={4} yMin={-4} yMax={6} ux={ux} uy={uy} grid/>
     {showAs&&<>
-      <line x1={X(-6)} y1={Y(k-b/a*((-6)-h))} x2={X(4)} y2={Y(k+b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
-      <line x1={X(-6)} y1={Y(k+b/a*((-6)-h))} x2={X(4)} y2={Y(k-b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
+      <line x1={X(-6)} y1={Y(k+b/a*((-6)-h))} x2={X(4)} y2={Y(k+b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
+      <line x1={X(-6)} y1={Y(k-b/a*((-6)-h))} x2={X(4)} y2={Y(k-b/a*(4-h))} stroke="#f97316" strokeWidth="1.4" strokeDasharray="5,3"/>
     </>}
     {showH&&<>
       <polyline points={makeB(1,1)} fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"/>
