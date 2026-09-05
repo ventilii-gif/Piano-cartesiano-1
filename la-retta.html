@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La retta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<style>
+  :root{
+    --blue-900:#12314f;
+    --blue-700:#1d4e89;
+    --blue-500:#3b7dc4;
+    --blue-100:#e7f0fa;
+    --amber-600:#c9752a;
+    --amber-100:#faf0e3;
+    --ink:#1f2933;
+    --paper:#faf9f6;
+    --line:#dfe3e8;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.6;
+  }
+  .wrap{max-width:940px;margin:0 auto;padding:0 16px}
+
+  /* Header (in-flow, non-sticky) */
+  header.masthead{background:var(--blue-900);color:#fff;padding:22px 0 18px}
+  header.masthead h1{
+    font-family:var(--serif);font-weight:600;font-size:clamp(22px,4.5vw,32px);
+    margin:0;line-height:1.15;letter-spacing:.2px;
+  }
+  header.masthead p{margin:6px 0 0;font-size:14px;color:#c7d6e6;max-width:60ch}
+  .kicker{
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:#8fb0d1;margin:0 0 6px;
+  }
+
+  /* Tab bar (plain, in-flow) */
+  .tablist{
+    display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid var(--line);
+    margin:18px 0 24px;
+  }
+  .tab{
+    appearance:none;border:none;background:transparent;cursor:pointer;
+    font-family:var(--sans);font-size:15px;font-weight:600;color:#5a6b7b;
+    padding:11px 16px;border-radius:8px 8px 0 0;position:relative;
+    border-bottom:3px solid transparent;margin-bottom:-2px;
+  }
+  .tab:hover{color:var(--blue-700);background:var(--blue-100)}
+  .tab[aria-selected="true"]{color:var(--blue-900);border-bottom-color:var(--blue-700)}
+
+  section[role="tabpanel"]{padding-bottom:64px;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  h2{font-family:var(--serif);font-weight:600;color:var(--blue-900);font-size:24px;margin:8px 0 4px}
+  h3{font-family:var(--serif);font-weight:600;color:var(--blue-900);font-size:19px;margin:26px 0 8px}
+  a{color:var(--blue-700)}
+
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin:14px 0;box-shadow:0 1px 3px rgba(18,49,79,.05);
+  }
+  .card.soft{background:var(--blue-100);border-color:#cfe0f1}
+  .lead{color:#3d4a57}
+  .formula-block{
+    background:var(--blue-100);border:1px solid #cfe0f1;border-radius:10px;
+    padding:12px 16px;margin:12px 0;overflow-x:auto;
+  }
+  .tag{
+    display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;padding:3px 9px;border-radius:20px;font-weight:500;
+  }
+  .tag.blue{background:var(--blue-100);color:var(--blue-700)}
+  .tag.amber{background:var(--amber-100);color:var(--amber-600)}
+  ul.clean{margin:8px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  .mono{font-family:var(--mono)}
+
+  /* Buttons */
+  .btn{
+    appearance:none;font-family:var(--sans);font-weight:600;font-size:15px;
+    border-radius:10px;padding:11px 18px;cursor:pointer;border:1.5px solid transparent;
+    display:inline-flex;align-items:center;gap:8px;transition:filter .15s,background .15s;
+  }
+  .btn svg{width:17px;height:17px;flex:none}
+  .btn-primary{background:var(--blue-700);color:#fff}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-ghost{background:#fff;color:var(--blue-700);border-color:var(--line)}
+  .btn-ghost:hover{background:var(--blue-100)}
+  .btn:disabled{opacity:.45;cursor:default;filter:none}
+
+  /* Focus visibility — every interactive element */
+  a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
+    outline:3px solid var(--blue-500);outline-offset:2px;border-radius:6px;
+  }
+
+  /* Simulation */
+  .sim-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start}
+  .sim-canvas-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+  canvas{width:100%;height:auto;display:block;touch-action:none}
+  .controls label{display:block;font-size:13px;font-weight:600;color:#3d4a57;margin:14px 0 4px}
+  .controls .row{display:flex;align-items:center;gap:10px}
+  .controls input[type=range]{flex:1;accent-color:var(--blue-700)}
+  .controls output{font-family:var(--mono);font-size:14px;color:var(--blue-900);min-width:34px;text-align:right}
+  .readout{background:var(--blue-100);border:1px solid #cfe0f1;border-radius:12px;padding:14px 16px;margin-top:16px}
+  .readout div{margin:7px 0;font-size:15px}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+  /* Practice */
+  .prob{font-size:17px;margin:6px 0 14px}
+  .inputs{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:13px;font-weight:600;color:#3d4a57}
+  .field input{
+    font-family:var(--mono);font-size:16px;width:120px;padding:9px 11px;
+    border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
+  }
+  .field input:focus{border-color:var(--blue-500);outline:none}
+  .feedback{border-radius:11px;padding:13px 16px;margin:14px 0;display:flex;gap:10px;align-items:flex-start}
+  .feedback svg{width:20px;height:20px;flex:none;margin-top:1px}
+  .feedback.ok{background:var(--blue-100);border:1px solid #bcd4ec;color:var(--blue-900)}
+  .feedback.no{background:var(--amber-100);border:1px solid #eccdaa;color:#7a4713}
+  .hintbox{background:#fff;border:1px dashed var(--amber-600);border-radius:10px;padding:11px 15px;margin:10px 0;color:#7a4713}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+
+  /* Quiz */
+  .progress-dots{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:18px}
+  .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .dot svg{width:12px;height:12px}
+  .dot.correct{background:var(--blue-700);border-color:var(--blue-700);color:#fff}
+  .dot.wrong{background:var(--amber-600);border-color:var(--amber-600);color:#fff}
+  .dot.current{box-shadow:0 0 0 3px var(--blue-100);border-color:var(--blue-500)}
+  .qcount{font-family:var(--mono);font-size:13px;color:#5a6b7b;margin-left:6px}
+  .option{
+    display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+    background:#fff;border:1.5px solid var(--line);border-radius:11px;
+    padding:13px 16px;margin:9px 0;cursor:pointer;font-family:var(--sans);font-size:15px;color:var(--ink);
+  }
+  .option:hover:not(:disabled){border-color:var(--blue-500);background:var(--blue-100)}
+  .option:disabled{cursor:default}
+  .option .letter{font-family:var(--mono);font-weight:700;color:#5a6b7b;flex:none}
+  .option .mark{margin-left:auto;flex:none}
+  .option .mark svg{width:19px;height:19px}
+  .option.is-correct{border-color:var(--blue-700);background:var(--blue-100)}
+  .option.is-correct .letter{color:var(--blue-700)}
+  .option.is-chosen-wrong{border-color:var(--amber-600);background:var(--amber-100)}
+  .option.is-chosen-wrong .letter{color:var(--amber-600)}
+  .explain{border-radius:11px;padding:14px 16px;margin:14px 0}
+  .explain.ok{background:var(--blue-100);border:1px solid #bcd4ec}
+  .explain.no{background:var(--amber-100);border:1px solid #eccdaa}
+  .explain .head{font-weight:700;font-family:var(--serif);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .quiz-nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
+  .score{font-family:var(--mono);font-size:14px;color:var(--blue-900)}
+  .summary{text-align:center;padding:26px 10px}
+  .summary .big{font-family:var(--serif);font-size:44px;font-weight:700;color:var(--blue-900)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+  @media (max-width:680px){
+    .sim-grid{grid-template-columns:1fr}
+    .quiz-nav .btn{flex:1}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">Geometria analitica · biennio</p>
+    <h1>La retta</h1>
+    <p>Equazione, pendenza, rette parallele e perpendicolari, distanza punto-retta. Teoria, una simulazione da esplorare, esercizi guidati e un quiz.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tablist" role="tablist" aria-label="Sezioni del modulo">
+    <button class="tab" role="tab" id="tab-teoria"  aria-controls="panel-teoria"  aria-selected="true">Teoria</button>
+    <button class="tab" role="tab" id="tab-sim"     aria-controls="panel-sim"     aria-selected="false">Simulazione</button>
+    <button class="tab" role="tab" id="tab-pratica" aria-controls="panel-pratica" aria-selected="false">Pratica interattiva</button>
+    <button class="tab" role="tab" id="tab-quiz"    aria-controls="panel-quiz"    aria-selected="false">Quiz</button>
+  </div>
+
+  <!-- ============ TEORIA ============ -->
+  <section role="tabpanel" id="panel-teoria" aria-labelledby="tab-teoria">
+    <h2>L'equazione della retta</h2>
+    <p class="lead">Una retta non verticale ha equazione <strong>esplicita</strong> \(y=mx+q\): il coefficiente \(m\) è la <em>pendenza</em> (o coefficiente angolare) e \(q\) è l'<em>intercetta</em> sull'asse \(y\), cioè il valore di \(y\) quando \(x=0\).</p>
+
+    <h3>La pendenza</h3>
+    <p>La pendenza misura l'inclinazione. Dati due punti \(A(x_1,y_1)\) e \(B(x_2,y_2)\) della retta:</p>
+    <div class="formula-block">\[ m=\frac{\Delta y}{\Delta x}=\frac{y_2-y_1}{x_2-x_1} \]</div>
+    <p class="lead">Se \(m>0\) la retta sale, se \(m<0\) scende, se \(m=0\) è orizzontale \((y=q)\). Una retta <strong>verticale</strong> \(x=k\) non ha pendenza definita, perché \(\Delta x=0\).</p>
+
+    <h3>Retta per un punto e per due punti</h3>
+    <p>Nota la pendenza \(m\) e un punto \(P(x_0,y_0)\), la retta si scrive in forma <em>punto-pendenza</em> \(y-y_0=m(x-x_0)\). Per due punti distinti passa <strong>una sola</strong> retta: si calcola \(m\) e poi si impone il passaggio per uno dei due punti.</p>
+
+    <h3>Forma implicita</h3>
+    <p>Ogni retta — comprese le verticali — si scrive nella forma <strong>implicita</strong>:</p>
+    <div class="formula-block">\[ ax+by+c=0 \]</div>
+    <p class="lead">Se \(b\neq0\), da qui si ricava \(m=-\dfrac{a}{b}\) e \(q=-\dfrac{c}{b}\).</p>
+
+    <h3>Parallele e perpendicolari</h3>
+    <div class="card">
+      <ul class="clean">
+        <li>Rette <strong>parallele</strong>: stessa pendenza, \(m_1=m_2\) (con \(q_1\neq q_2\)).</li>
+        <li>Rette <strong>perpendicolari</strong>: pendenze reciproche e opposte, \(m_1\cdot m_2=-1\), cioè \(m_2=-\dfrac{1}{m_1}\).</li>
+      </ul>
+    </div>
+
+    <h3>Distanza punto-retta</h3>
+    <p>La distanza del punto \(P(x_0,y_0)\) dalla retta \(ax+by+c=0\) è:</p>
+    <div class="formula-block">\[ d=\frac{|a x_0+b y_0+c|}{\sqrt{a^2+b^2}} \]</div>
+    <p class="lead"><span class="mono">Esempio:</span> la distanza di \(O(0,0)\) da \(3x+4y-10=0\) è \(\dfrac{|-10|}{\sqrt{9+16}}=\dfrac{10}{5}=2\).</p>
+  </section>
+
+  <!-- ============ SIMULAZIONE ============ -->
+  <section role="tabpanel" id="panel-sim" aria-labelledby="tab-sim" hidden>
+    <h2>La retta \(y=mx+q\)</h2>
+    <p class="lead">Regola la pendenza \(m\) e l'intercetta \(q\): osserva come cambiano l'inclinazione, il punto d'incontro con l'asse \(y\) e l'intercetta con l'asse \(x\). Il triangolo mostra "di quanto sale" la retta ogni volta che \(x\) aumenta di 1.</p>
+    <div class="sim-grid">
+      <div class="sim-canvas-wrap">
+        <canvas id="sim" width="440" height="440" aria-label="Retta nel piano cartesiano"></canvas>
+      </div>
+      <div class="controls">
+        <label for="sm">Pendenza \(m\)</label>
+        <div class="row"><input type="range" id="sm" min="-4" max="4" step="0.5" value="1"><output id="smo"></output></div>
+        <label for="sq">Intercetta \(q\)</label>
+        <div class="row"><input type="range" id="sq" min="-6" max="6" step="1" value="2"><output id="sqo"></output></div>
+        <div class="readout" id="readout" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRATICA ============ -->
+  <section role="tabpanel" id="panel-pratica" aria-labelledby="tab-pratica" hidden>
+    <h2>Esercizi guidati</h2>
+    <p class="lead">Risolvi, scrivi il risultato e verifica. Se ti blocchi, chiedi un aiuto: i suggerimenti diventano via via più espliciti. Con "Nuovo esercizio" ottieni dati diversi.</p>
+
+    <div class="card">
+      <div class="toolbar" style="margin-bottom:14px">
+        <button class="btn btn-ghost" data-ptype="0" type="button">Pendenza</button>
+        <button class="btn btn-ghost" data-ptype="1" type="button">Intercetta q</button>
+        <button class="btn btn-ghost" data-ptype="2" type="button">Intercetta x</button>
+      </div>
+      <p class="prob" id="prob"></p>
+      <div class="inputs" id="pinputs"></div>
+      <div class="toolbar">
+        <button class="btn btn-primary" id="pcheck" type="button">Verifica</button>
+        <button class="btn btn-ghost" id="phint" type="button">Aiuto</button>
+        <button class="btn btn-ghost" id="pnew" type="button">Nuovo esercizio</button>
+      </div>
+      <div id="phints"></div>
+      <div id="pfeedback"></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section role="tabpanel" id="panel-quiz" aria-labelledby="tab-quiz" hidden>
+    <h2>Quiz</h2>
+    <div class="progress-dots" id="dots"></div>
+    <div id="quizbody"></div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>
+/* ---------- Math typesetting helper ---------- */
+var MATH_DELIMS=[
+  {left:"\\[",right:"\\]",display:true},
+  {left:"\\(",right:"\\)",display:false},
+  {left:"$$",right:"$$",display:true},
+  {left:"$",right:"$",display:false}
+];
+function typeset(el){
+  if(window.renderMathInElement){
+    try{renderMathInElement(el,{delimiters:MATH_DELIMS,throwOnError:false});}catch(e){}
+  }
+}
+/* ---------- SVG icons (no emoji) ---------- */
+var ICON={
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  cross:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  arrowL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg>',
+  arrowR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>'
+};
+
+/* ---------- Tabs ---------- */
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on=t===tab;
+      t.setAttribute('aria-selected',on?'true':'false');
+      var panel=document.getElementById(t.getAttribute('aria-controls'));
+      panel.hidden=!on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){select(t);});
+    t.addEventListener('keydown',function(e){
+      var i=tabs.indexOf(t);
+      if(e.key==='ArrowRight'){e.preventDefault();tabs[(i+1)%tabs.length].focus();}
+      if(e.key==='ArrowLeft'){e.preventDefault();tabs[(i-1+tabs.length)%tabs.length].focus();}
+    });
+  });
+})();
+
+/* ======================================================
+   SIMULATION — line y = m x + q
+====================================================== */
+(function(){
+  var cv=document.getElementById('sim'), ctx=cv.getContext('2d');
+  var RANGE=8, SIZE=440, PAD=24;
+  function scale(){return (SIZE-2*PAD)/(2*RANGE);}
+  function X(x){return PAD+(x+RANGE)*scale();}
+  function Y(y){return SIZE-PAD-(y+RANGE)*scale();}
+  var sm=document.getElementById('sm'), sq=document.getElementById('sq');
+  var smo=document.getElementById('smo'), sqo=document.getElementById('sqo');
+
+  function setupDPR(){
+    var dpr=window.devicePixelRatio||1;
+    cv.width=SIZE*dpr;cv.height=SIZE*dpr;
+    cv.style.aspectRatio='1 / 1';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function grid(){
+    ctx.clearRect(0,0,SIZE,SIZE);
+    ctx.lineWidth=1;ctx.strokeStyle='#eef1f4';
+    for(var i=-RANGE;i<=RANGE;i++){
+      ctx.beginPath();ctx.moveTo(X(i),Y(-RANGE));ctx.lineTo(X(i),Y(RANGE));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(X(-RANGE),Y(i));ctx.lineTo(X(RANGE),Y(i));ctx.stroke();
+    }
+    ctx.strokeStyle='#9aa7b4';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(X(-RANGE),Y(0));ctx.lineTo(X(RANGE),Y(0));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(X(0),Y(-RANGE));ctx.lineTo(X(0),Y(RANGE));ctx.stroke();
+    ctx.fillStyle='#9aa7b4';ctx.font='11px "JetBrains Mono",monospace';
+    ctx.fillText('x',X(RANGE)-10,Y(0)-6);ctx.fillText('y',X(0)+6,Y(RANGE)+12);
+  }
+  function fmt(v){return Number.isInteger(v)?v:v.toFixed(1).replace('.',',');}
+  function point(x,y,c){ctx.beginPath();ctx.arc(X(x),Y(y),5,0,7);ctx.fillStyle=c;ctx.fill();}
+  function eqTex(m,q){
+    if(m===0)return 'y='+fmt(q);
+    var mp = m===1?'':(m===-1?'-':fmt(m));
+    var s='y='+mp+'x';
+    if(q>0)s+='+'+fmt(q); else if(q<0)s+='-'+fmt(Math.abs(q));
+    return s;
+  }
+  function draw(){
+    var m=+sm.value, q=+sq.value;
+    smo.textContent=fmt(m); sqo.textContent=fmt(q);
+    setupDPR(); grid();
+    // the line
+    ctx.strokeStyle='#1d4e89'; ctx.lineWidth=2.6;
+    ctx.beginPath(); ctx.moveTo(X(-RANGE),Y(m*(-RANGE)+q)); ctx.lineTo(X(RANGE),Y(m*RANGE+q)); ctx.stroke();
+    // slope triangle from (0,q): run 1, rise m
+    if(m!==0){
+      ctx.setLineDash([5,4]); ctx.lineWidth=1.6;
+      ctx.strokeStyle='#3b7dc4';
+      ctx.beginPath(); ctx.moveTo(X(0),Y(q)); ctx.lineTo(X(1),Y(q)); ctx.stroke();
+      ctx.strokeStyle='#c9752a';
+      ctx.beginPath(); ctx.moveTo(X(1),Y(q)); ctx.lineTo(X(1),Y(q+m)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#3b7dc4'; ctx.font='600 12px "JetBrains Mono",monospace';
+      ctx.fillText('1', X(0.5)-3, Y(q)+15);
+      ctx.fillStyle='#c9752a';
+      ctx.fillText('m='+fmt(m), X(1)+6, Y(q+m/2)+4);
+    }
+    // y-intercept
+    point(0,q,'#c9752a');
+    ctx.fillStyle='#c9752a'; ctx.font='600 12px "JetBrains Mono",monospace';
+    ctx.fillText('q', X(0)-14, Y(q)-6);
+    // x-intercept
+    if(m!==0){ point(-q/m,0,'#1d4e89'); }
+    // readout
+    var r=document.getElementById('readout');
+    r.innerHTML=
+      '<div><span class="swatch" style="background:#1d4e89"></span>\\('+eqTex(m,q)+'\\)</div>'+
+      '<div>pendenza \\(m='+fmt(m)+'\\)</div>'+
+      '<div>intercetta \\(y\\): \\((0,\\,'+fmt(q)+')\\)</div>'+
+      '<div>intercetta \\(x\\): '+(m!==0?'\\(('+fmt(-q/m)+',\\,0)\\)':'nessuna (retta orizzontale)')+'</div>';
+    typeset(r);
+  }
+  sm.addEventListener('input',draw); sq.addEventListener('input',draw);
+  draw();
+})();
+
+/* ======================================================
+   PRACTICE — generated exercises with progressive hints
+====================================================== */
+(function(){
+  function ri(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+  function nz(a,b){var v;do{v=ri(a,b);}while(v===0);return v;}
+  function fmt(v){return Number.isInteger(v)?v:v.toFixed(2).replace('.',',');}
+  function coef(m){return m===1?'':(m===-1?'-':String(m));}
+  function sgn(q){return q>0?'+'+q:(q<0?'-'+Math.abs(q):'');}
+  var TOL=0.05;
+
+  function genSlope(){
+    var x1=ri(-5,3), x2=x1+ri(1,3), y1=ri(-5,5), y2=ri(-5,5);
+    var m=(y2-y1)/(x2-x1);
+    return{
+      prompt:'Calcola la pendenza \\(m\\) della retta passante per \\(A('+x1+','+y1+')\\) e \\(B('+x2+','+y2+')\\).',
+      inputs:[{id:'m',label:'m ='}],
+      check:function(v){return Math.abs(v.m-m)<=TOL;},
+      solution:'\\(m=\\dfrac{y_B-y_A}{x_B-x_A}=\\dfrac{'+y2+'-('+y1+')}{'+x2+'-('+x1+')}=\\dfrac{'+(y2-y1)+'}{'+(x2-x1)+'}='+fmt(m)+'\\)',
+      hints:[
+        'La pendenza è il rapporto tra la variazione di \\(y\\) e quella di \\(x\\).',
+        '\\(m=\\dfrac{y_B-y_A}{x_B-x_A}\\).',
+        'Qui \\(\\Delta y='+(y2-y1)+'\\) e \\(\\Delta x='+(x2-x1)+'\\).'
+      ]
+    };
+  }
+  function genQ(){
+    var m=nz(-3,3), x0=ri(-4,4), y0=ri(-5,5);
+    var q=y0-m*x0;
+    return{
+      prompt:'La retta ha pendenza \\(m='+m+'\\) e passa per \\(P('+x0+','+y0+')\\). Trova l\'intercetta \\(q\\).',
+      inputs:[{id:'q',label:'q ='}],
+      check:function(v){return Math.abs(v.q-q)<=TOL;},
+      solution:'\\(y=mx+q\\Rightarrow q=y_0-m\\,x_0='+y0+'-('+m+')('+x0+')='+q+'\\)',
+      hints:[
+        'Sostituisci le coordinate del punto nell\'equazione \\(y=mx+q\\).',
+        'Isola \\(q\\): \\(q=y_0-m\\,x_0\\).',
+        'Qui \\(q='+y0+'-('+m+')\\cdot('+x0+')\\).'
+      ]
+    };
+  }
+  function genXint(){
+    var m=nz(-4,4), q=nz(-6,6);
+    var xi=-q/m;
+    return{
+      prompt:'Trova l\'ascissa del punto in cui la retta \\(y='+coef(m)+'x'+sgn(q)+'\\) incontra l\'asse \\(x\\).',
+      inputs:[{id:'x',label:'x ='}],
+      check:function(v){return Math.abs(v.x-xi)<=TOL;},
+      solution:'\\(y=0\\Rightarrow '+coef(m)+'x'+sgn(q)+'=0\\Rightarrow x=-\\dfrac{q}{m}=-\\dfrac{'+q+'}{'+m+'}='+fmt(xi)+'\\)',
+      hints:[
+        'Sull\'asse \\(x\\) l\'ordinata vale \\(y=0\\).',
+        'Risolvi \\(mx+q=0\\Rightarrow x=-\\dfrac{q}{m}\\).',
+        'Qui \\(x=-\\dfrac{'+q+'}{'+m+'}\\).'
+      ]
+    };
+  }
+
+  var GENS=[genSlope,genQ,genXint];
+  var cur, hintIdx=0;
+  var probEl=document.getElementById('prob'),
+      inputsEl=document.getElementById('pinputs'),
+      hintsEl=document.getElementById('phints'),
+      fbEl=document.getElementById('pfeedback'),
+      ptype=0;
+
+  function load(type){
+    ptype=type;cur=GENS[type]();hintIdx=0;
+    probEl.innerHTML=cur.prompt;
+    inputsEl.innerHTML=cur.inputs.map(function(f){
+      return '<div class="field"><label for="pi_'+f.id+'">\\('+f.label.replace(' =','')+'\\,=\\)</label>'+
+             '<input id="pi_'+f.id+'" inputmode="decimal" autocomplete="off"></div>';
+    }).join('');
+    hintsEl.innerHTML='';fbEl.innerHTML='';
+    typeset(probEl);typeset(inputsEl);
+    document.querySelectorAll('[data-ptype]').forEach(function(b){
+      b.classList.toggle('btn-primary',+b.dataset.ptype===type);
+      b.classList.toggle('btn-ghost',+b.dataset.ptype!==type);
+    });
+    var first=inputsEl.querySelector('input');if(first)first.focus();
+  }
+  function readInputs(){
+    var v={},ok=true;
+    cur.inputs.forEach(function(f){
+      var raw=(document.getElementById('pi_'+f.id).value||'').trim().replace(',','.');
+      if(raw==='')ok=false;
+      v[f.id]=parseFloat(raw);
+      if(isNaN(v[f.id]))ok=false;
+    });
+    return ok?v:null;
+  }
+  document.getElementById('pcheck').addEventListener('click',function(){
+    var v=readInputs();
+    if(!v){fbEl.innerHTML='<div class="feedback no">'+ICON.info+'<div>Inserisci un valore numerico in ogni campo.</div></div>';return;}
+    if(cur.check(v)){
+      fbEl.innerHTML='<div class="feedback ok">'+ICON.check+'<div><strong>Corretto.</strong><br>'+cur.solution+'</div></div>';
+    }else{
+      fbEl.innerHTML='<div class="feedback no">'+ICON.cross+'<div><strong>Non ancora.</strong> Ricontrolla i calcoli o chiedi un aiuto.</div></div>';
+    }
+    typeset(fbEl);
+  });
+  document.getElementById('phint').addEventListener('click',function(){
+    if(!cur.hints||hintIdx>=cur.hints.length){return;}
+    var h=document.createElement('div');h.className='hintbox';
+    h.innerHTML='<strong>Aiuto '+(hintIdx+1)+'.</strong> '+cur.hints[hintIdx];
+    hintsEl.appendChild(h);typeset(h);hintIdx++;
+    if(hintIdx>=cur.hints.length)this.disabled=true;
+  });
+  document.getElementById('pnew').addEventListener('click',function(){document.getElementById('phint').disabled=false;load(ptype);});
+  document.querySelectorAll('[data-ptype]').forEach(function(b){
+    b.addEventListener('click',function(){document.getElementById('phint').disabled=false;load(+b.dataset.ptype);});
+  });
+  load(0);
+})();
+
+/* ======================================================
+   QUIZ — one question at a time, answered = locked
+====================================================== */
+var QUIZ=[
+  {type:"T",q:"In $y=mx+q$, cosa rappresenta $q$?",
+   opts:["La pendenza","L'intercetta con l'asse $y$","L'intercetta con l'asse $x$","Il coefficiente di $x^2$"],
+   ans:1,why:"$q$ è il valore di $y$ per $x=0$: il punto in cui la retta taglia l'asse $y$.",
+   wr:["$m$ è la pendenza.","L'intercetta con l'asse $x$ si trova ponendo $y=0$.","Le rette non hanno $x^2$."]},
+  {type:"T",q:"Due rette sono parallele se e solo se:",
+   opts:["Hanno la stessa intercetta $q$","Hanno la stessa pendenza $m$","Si intersecano in un punto","Sono perpendicolari"],
+   ans:1,why:"Rette parallele: $m_1=m_2$ ma $q_1\\neq q_2$.",
+   wr:["Stessa $q$ e stessa $m \\Rightarrow$ coincidenti.","Rette che si intersecano non sono parallele.","Le perpendicolari si intersecano."]},
+  {type:"T",q:"La condizione di perpendicolarità tra due rette è:",
+   opts:["$m_1=m_2$","$m_1+m_2=0$","$m_1\\cdot m_2=-1$","$m_1\\cdot m_2=1$"],
+   ans:2,why:"$m_1\\cdot m_2=-1$: le pendenze sono reciproche e opposte.",
+   wr:["$m_1=m_2$ è il parallelismo.","$m_1+m_2=0$: pendenze opposte, non perpendicolari.","$m_1\\cdot m_2=1$ non è la condizione."]},
+  {type:"T",q:"Quante rette passano per due punti distinti?",
+   opts:["Infinite","Nessuna","Una sola","Due"],
+   ans:2,why:"Per due punti distinti passa una sola retta: postulato della geometria euclidea.",
+   wr:["Infinite passano per un solo punto.","Esiste sempre almeno una.","Non due: è unica."]},
+  {type:"T",q:"Qual è la forma implicita generale di una retta?",
+   opts:["$y=mx+q$","$ax+by+c=0$","$y-y_0=m(x-x_0)$","$y=k$"],
+   ans:1,why:"$ax+by+c=0$ include anche le rette verticali ($b=0$).",
+   wr:["Forma esplicita: esclude le verticali.","Forma punto-pendenza.","Retta orizzontale: caso particolare."]},
+  {type:"T",q:"Come si trova l'intercetta sull'asse $x$ di $y=mx+q$?",
+   opts:["Poni $y=0$ e risolvi per $x$","Poni $x=0$","Calcola $m$","Calcola $\\dfrac{q}{m}$"],
+   ans:0,why:"Sull'asse $x$:  $y=0 \\Rightarrow 0=mx+q \\Rightarrow x=-\\dfrac{q}{m}$.",
+   wr:["$x=0$ dà l'intercetta sull'asse $y$.","$m$ è la pendenza, non l'intercetta.","$\\dfrac{q}{m}$ è l'opposto dell'ascissa, manca il segno."]},
+  {type:"T",q:"La retta $x=k$ (con $k$ costante) è:",
+   opts:["Una retta verticale senza pendenza definita","Una retta con pendenza $k$","Una retta orizzontale","Una parabola"],
+   ans:0,why:"$x=k$ è verticale, parallela all'asse $y$.  $\\Delta x=0 \\Rightarrow$ pendenza non definita.",
+   wr:["La pendenza sarebbe $\\dfrac{\\Delta y}{\\Delta x}$, ma $\\Delta x=0$.","$y=k$ è l'orizzontale.","Le parabole hanno $x^2$."]},
+  {type:"T",q:"L'equazione della retta per l'origine con pendenza $m$ è:",
+   opts:["$y=mx$","$y=m$","$x=m$","$y=mx+m$"],
+   ans:0,why:"Passando per $O(0,0)$:  $0=m\\cdot 0+q \\Rightarrow q=0 \\Rightarrow y=mx$.",
+   wr:["$y=m$ è una retta orizzontale.","$x=m$ è verticale.","$y=mx+m$ passa per $(0,m)$, non per l'origine."]},
+  {type:"T",q:"La distanza del punto $P(x_0,y_0)$ dalla retta $ax+by+c=0$ è:",
+   opts:["$\\dfrac{|ax_0+by_0+c|}{\\sqrt{a^2+b^2}}$","$|ax_0+by_0+c|$","$\\sqrt{a^2+b^2}$","$(ax_0+by_0+c)^2$"],
+   ans:0,why:"Il denominatore $\\sqrt{a^2+b^2}$ normalizza per la lunghezza del vettore normale alla retta.",
+   wr:["Manca la normalizzazione al denominatore.","$\\sqrt{a^2+b^2}$ è il denominatore, non la distanza.","Il quadrato non è una distanza."]},
+  {type:"T",q:"Il fascio proprio di rette con centro $P(x_0,y_0)$ è:",
+   opts:["L'insieme di tutte le rette passanti per $P$","Le rette con la stessa pendenza","Le rette parallele a una data","Le rette per l'origine"],
+   ans:0,why:"Il fascio proprio di centro $P$ è la famiglia di tutte le rette passanti per un punto fisso $P$.",
+   wr:["Stessa pendenza: fascio improprio (parallele).","Fascio improprio: parallele.","Solo il caso particolare $P=O$."]},
+  {type:"N",q:"Pendenza della retta $y=3x-5$?",
+   opts:["$3$","$-5$","$5$","$-3$"],
+   ans:0,why:"$m=3$ (coefficiente di $x$).",
+   wr:["$-5$ è $q$.","$5=|q|$.","$-3$: segno sbagliato."]},
+  {type:"N",q:"Equazione della retta per $A(0,2)$ e $B(2,6)$?",
+   opts:["$y=2x+2$","$y=2x-2$","$y=3x+2$","$y=x+2$"],
+   ans:0,why:"$m=\\dfrac{6-2}{2-0}=2$;  $q=2 \\Rightarrow y=2x+2$.",
+   wr:["$q\\neq -2$.","$m\\neq 3$.","$m\\neq 1$."]},
+  {type:"N",q:"Distanza di $P(0,0)$ dalla retta $3x+4y-10=0$?",
+   opts:["$2$","$10$","$5$","$8$"],
+   ans:0,why:"$d=\\dfrac{|-10|}{\\sqrt{9+16}}=\\dfrac{10}{5}=2$.",
+   wr:["$10$ è solo il numeratore.","$5$ è il denominatore.","$8$ errato."]},
+  {type:"N",q:"Retta con $m=-2$ passante per $(1,3)$: valore di $q$?",
+   opts:["$5$","$1$","$-1$","$-5$"],
+   ans:0,why:"$3=-2\\cdot 1+q \\Rightarrow q=5$.",
+   wr:["$q=1$: errore algebrico.","$q=-1$: segno sbagliato.","$q=-5$: sbagliato."]},
+  {type:"N",q:"Le rette $y=2x+1$ e $y=-\\dfrac{x}{2}+3$ sono:",
+   opts:["Parallele","Perpendicolari","Coincidenti","Incidenti non perpendicolari"],
+   ans:1,why:"$m_1\\cdot m_2=2\\cdot\\left(-\\dfrac{1}{2}\\right)=-1$: perpendicolari.",
+   wr:["Parallele richiede $m_1=m_2$.","Coincidenti: stessa equazione.","Il prodotto $-1$ dà perpendicolari."]},
+  {type:"N",q:"Intercetta sull'asse $x$ di $y=2x-6$?",
+   opts:["$x=3$","$x=-3$","$x=6$","$x=-6$"],
+   ans:0,why:"$y=0 \\Rightarrow 2x=6 \\Rightarrow x=3$.",
+   wr:["$x=-3$: segno sbagliato.","$x=6$ è $-q$, non $-\\dfrac{q}{m}$.","$x=-6$ errato."]},
+  {type:"N",q:"Pendenza della retta perpendicolare a $y=-3x+2$?",
+   opts:["$\\dfrac{1}{3}$","$-\\dfrac{1}{3}$","$3$","$-3$"],
+   ans:0,why:"$m_1=-3 \\Rightarrow m_2=-\\dfrac{1}{m_1}=\\dfrac{1}{3}$.",
+   wr:["$-\\dfrac{1}{3}$: segno sbagliato.","$3=-m_1$, non $-\\dfrac{1}{m_1}$.","$-3=m_1$, non la perpendicolare."]},
+  {type:"N",q:"Distanza tra le rette parallele $y=2x+1$ e $y=2x-3$?",
+   opts:["$\\dfrac{4}{\\sqrt{5}}$","$4$","$2$","$\\sqrt{5}$"],
+   ans:0,why:"Forma implicita: $2x-y+1=0$ e $2x-y-3=0$.  $d=\\dfrac{|1-(-3)|}{\\sqrt{4+1}}=\\dfrac{4}{\\sqrt{5}}$.",
+   wr:["$4$ è il numeratore prima della divisione.","$2$ errato.","$\\sqrt{5}$ è solo il denominatore."]},
+  {type:"N",q:"La retta $y=x+3$ interseca l'asse $x$ in $A$ e l'asse $y$ in $B$. Punto medio di $AB$?",
+   opts:["$\\left(-\\dfrac{3}{2},\\,\\dfrac{3}{2}\\right)$","$\\left(\\dfrac{3}{2},\\,-\\dfrac{3}{2}\\right)$","$(0,3)$","$(-3,0)$"],
+   ans:0,why:"$A(-3,0)$, $B(0,3) \\Rightarrow M\\left(-\\dfrac{3}{2},\\,\\dfrac{3}{2}\\right)$.",
+   wr:["Coordinate scambiate.","$B$ è un estremo, non il medio.","$A$ è un estremo, non il medio."]},
+  {type:"N",q:"Retta passante per $A(1,2)$ e $B(3,2)$: equazione?",
+   opts:["$y=2$","$x=2$","$y=x+1$","$y=2x$"],
+   ans:0,why:"$A$ e $B$ hanno ordinata $y=2$: retta orizzontale $y=2$, pendenza $m=0$.",
+   wr:["$x=2$ è verticale, ma le ascisse sono diverse.","$y=x+1$ ha $m=1$ errato.","$y=2x$ non passa per $B(3,2)$, perché $2\\cdot 3=6\\neq 2$."]}
+];
+
+(function(){
+  var LETTERS=["A","B","C","D"];
+  var answers=QUIZ.map(function(){return null;});
+  var cur=0, score=0;
+  var dotsEl=document.getElementById('dots'), bodyEl=document.getElementById('quizbody');
+
+  function renderDots(){
+    dotsEl.innerHTML='';
+    QUIZ.forEach(function(q,i){
+      var b=document.createElement('button');
+      b.className='dot'+(i===cur?' current':'');
+      b.setAttribute('aria-label','Domanda '+(i+1));
+      if(answers[i]!==null){
+        var ok=answers[i]===q.ans;
+        b.classList.add(ok?'correct':'wrong');
+        b.innerHTML=ok?ICON.check:ICON.cross;
+      }else{b.textContent=i+1;b.style.fontFamily='var(--mono)';b.style.fontSize='12px';b.style.color='#5a6b7b';}
+      b.addEventListener('click',function(){cur=i;render();});
+      dotsEl.appendChild(b);
+    });
+    var span=document.createElement('span');span.className='qcount';
+    span.textContent=(cur+1)+' / '+QUIZ.length+' · punteggio '+score;
+    dotsEl.appendChild(span);
+  }
+
+  function render(){
+    if(cur>=QUIZ.length){renderSummary();return;}
+    renderDots();
+    var q=QUIZ[cur], chosen=answers[cur], answered=chosen!==null;
+    var html='<div class="card"><span class="tag '+(q.type==='T'?'blue':'amber')+'">'+(q.type==='T'?'Teorico':'Numerico')+'</span>'+
+      '<p style="font-size:17px;margin:12px 0 4px">'+q.q+'</p></div>';
+    html+='<div id="opts">';
+    q.opts.forEach(function(opt,i){
+      var cls='option';
+      if(answered){
+        if(i===q.ans)cls+=' is-correct';
+        else if(i===chosen)cls+=' is-chosen-wrong';
+      }
+      var mark='';
+      if(answered&&i===q.ans)mark='<span class="mark" style="color:var(--blue-700)">'+ICON.check+'</span>';
+      else if(answered&&i===chosen)mark='<span class="mark" style="color:var(--amber-600)">'+ICON.cross+'</span>';
+      html+='<button class="'+cls+'" data-i="'+i+'"'+(answered?' disabled':'')+'>'+
+        '<span class="letter">'+LETTERS[i]+'</span><span>'+opt+'</span>'+mark+'</button>';
+    });
+    html+='</div>';
+    if(answered){
+      var ok=chosen===q.ans;
+      html+='<div class="explain '+(ok?'ok':'no')+'">'+
+        '<div class="head" style="color:'+(ok?'var(--blue-700)':'var(--amber-600)')+'">'+
+          (ok?ICON.check+' Risposta corretta':ICON.cross+' Risposta errata')+'</div>';
+      if(!ok)html+='<p style="margin:0 0 6px"><strong>Perché no:</strong> '+q.wr[chosen<q.ans?chosen:chosen-1]+'</p>';
+      html+='<p style="margin:0"><strong>Spiegazione:</strong> '+q.why+'</p></div>';
+    }else{
+      html+='<p style="color:#5a6b7b;font-style:italic;margin-top:14px">Scegli una risposta per vedere subito il riscontro.</p>';
+    }
+    html+='<div class="quiz-nav">'+
+      '<button class="btn btn-ghost" id="qprev"'+(cur===0?' disabled':'')+'>'+ICON.arrowL+' Precedente</button>'+
+      '<button class="btn btn-primary" id="qnext">'+(cur===QUIZ.length-1?'Risultati':'Successiva')+' '+ICON.arrowR+'</button>'+
+      '</div>';
+    bodyEl.innerHTML=html;
+    typeset(bodyEl);
+
+    if(!answered){
+      bodyEl.querySelectorAll('.option').forEach(function(b){
+        b.addEventListener('click',function(){
+          var i=+b.dataset.i;
+          answers[cur]=i;
+          if(i===q.ans)score++;
+          render();
+        });
+      });
+    }
+    document.getElementById('qprev').addEventListener('click',function(){if(cur>0){cur--;render();}});
+    document.getElementById('qnext').addEventListener('click',function(){cur++;render();});
+  }
+
+  function renderSummary(){
+    renderDots();
+    var pct=Math.round(score/QUIZ.length*100);
+    bodyEl.innerHTML='<div class="summary card">'+
+      '<div class="big">'+score+' / '+QUIZ.length+'</div>'+
+      '<p style="font-size:17px;color:#3d4a57">Hai risposto correttamente al '+pct+'% delle domande.</p>'+
+      '<div class="toolbar" style="justify-content:center;margin-top:12px">'+
+        '<button class="btn btn-ghost" id="qreview">'+ICON.arrowL+' Rivedi le domande</button>'+
+        '<button class="btn btn-primary" id="qrestart">'+ICON.refresh+' Ricomincia</button>'+
+      '</div></div>';
+    document.getElementById('qreview').addEventListener('click',function(){cur=QUIZ.length-1;render();});
+    document.getElementById('qrestart').addEventListener('click',function(){
+      answers=QUIZ.map(function(){return null;});cur=0;score=0;render();
+    });
+  }
+  render();
+})();
+
+/* initial math typeset for static theory */
+document.addEventListener('DOMContentLoaded',function(){typeset(document.body);});
+if(document.readyState!=='loading')typeset(document.body);
+</script>
+</body>
+</html>
